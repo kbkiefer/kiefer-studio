@@ -121,87 +121,25 @@
     <h2 class="section__title">One Person.<br>Full Stack.<br>Every Pixel.</h2>
   </section>
 
-  <section class="projects" id="projects">
-    <div class="projects__header">
-      <span class="projects__label">Selected Work</span>
-      <span class="projects__hint">Drag &rarr;</span>
+  <section class="work" id="projects">
+    <div class="work__grid" id="work-grid"></div>
+    <div class="work__focus">
+      <div class="work__focus-bracket work__focus-bracket--tl"></div>
+      <div class="work__focus-bracket work__focus-bracket--tr"></div>
+      <div class="work__focus-bracket work__focus-bracket--bl"></div>
+      <div class="work__focus-bracket work__focus-bracket--br"></div>
+      <span class="work__focus-name" id="work-focus-name"></span>
     </div>
-    <div class="projects__track" id="projects-track">
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#0a1050,#1a2a8e)">
-          <span class="project-card__watermark">Cymatics Lab</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">Cymatics Lab</span>
-          <span class="project-card__tags">iOS &middot; Metal &middot; Audio Visualization</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#0a3a15,#1a6e2a)">
-          <span class="project-card__watermark">Imago</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">Imago</span>
-          <span class="project-card__tags">iOS &middot; AI &middot; ADHD Companion</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#3a2a0a,#6e4e1a)">
-          <span class="project-card__watermark">Border Child</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">Border Child</span>
-          <span class="project-card__tags">Web &middot; R3F &middot; Film</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#0a2a3a,#1a4e6e)">
-          <span class="project-card__watermark">NovaTrade</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">NovaTrade</span>
-          <span class="project-card__tags">macOS &middot; SwiftUI &middot; Trading</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#2a0a3a,#4e1a6e)">
-          <span class="project-card__watermark">Resonance</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">Resonance</span>
-          <span class="project-card__tags">iOS &middot; Metal &middot; Consciousness</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#3a0a0a,#6e1a1a)">
-          <span class="project-card__watermark">ClearMind</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">ClearMind</span>
-          <span class="project-card__tags">iOS &middot; Canvas &middot; Neural Map</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#3a3a0a,#6e6e1a)">
-          <span class="project-card__watermark">Chrysalis</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">Chrysalis</span>
-          <span class="project-card__tags">Unity &middot; 3D &middot; Game</span>
-        </div>
-      </a>
-      <a class="project-card" href="#">
-        <div class="project-card__img" style="background:linear-gradient(135deg,#0a3a3a,#1a6e6e)">
-          <span class="project-card__watermark">ShalaMakes</span>
-        </div>
-        <div class="project-card__info">
-          <span class="project-card__name">ShalaMakes</span>
-          <span class="project-card__tags">Web &middot; 3D Printing &middot; Store</span>
-        </div>
-      </a>
-    </div>
-    <div class="projects__ghost" id="projects-ghost">Cymatics Lab</div>
   </section>
+
+  <div class="work-modal" id="work-modal">
+    <button class="work-modal__close" id="work-modal-close">&times;</button>
+    <div class="work-modal__hero" id="work-modal-hero">
+      <h2 class="work-modal__title" id="work-modal-title"></h2>
+      <span class="work-modal__tags" id="work-modal-tags"></span>
+    </div>
+    <div class="work-modal__body" id="work-modal-body"></div>
+  </div>
 
   <section class="section section--pink" id="services">
     <span class="section__label">02 // Services</span>

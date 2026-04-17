@@ -50,9 +50,9 @@ export function initDebugGUI(applyScrollProgress, lightsRef, rebuildPixel) {
   /* Timeline */
   const tlFolder = gui.addFolder('Scroll Timeline');
   tlFolder.add(timelineScrub, 'progress', 0, 1, 0.001).name('Scrub').listen().onChange(reapply);
-  tlFolder.add(scrollConfig, 'rotationY', 0, Math.PI * 4, 0.01).name('Total Y Rot').onChange(reapply);
+  tlFolder.add(scrollConfig, 'rotationY', 0, Math.PI * 20, 0.01).name('Total Y Rot').onChange(reapply);
   tlFolder.add(scrollConfig, 'camStartY', -5, 5, 0.01).name('Cam Start Y').onChange(reapply);
-  tlFolder.add(scrollConfig, 'camEndY', -8, 5, 0.01).name('Cam End Y').onChange(reapply);
+  tlFolder.add(scrollConfig, 'camEndY', -20, 20, 0.01).name('Cam End Y').onChange(reapply);
   tlFolder.add(scrollConfig, 'camStartZ', -2, 10, 0.01).name('Cam Start Z').onChange(reapply);
   tlFolder.add(scrollConfig, 'camEndZ', -5, 10, 0.01).name('Cam End Z').onChange(reapply);
   tlFolder.add(scrollConfig, 'scrollLength', 100, 2000, 10).name('Scroll Length %');

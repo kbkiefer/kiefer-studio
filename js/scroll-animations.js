@@ -3,8 +3,9 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
 import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation } from './bust.js';
-import { setFloatingObjectsVisible } from './floating-objects.js';
+import { setFloatingObjectsVisible, getFloatingObjects } from './floating-objects.js';
 import { initDebugGUI, scrollConfig, modelConfig, setTimelineProgress } from './debug-gui.js';
+import { initHeroGUI } from './hero-gui.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -48,6 +49,11 @@ export function initScrollAnimations() {
       lights,
       rebuildPixelBlit
     );
+
+    setTimeout(() => {
+      const shapes = getFloatingObjects();
+      if (shapes.length > 0) initHeroGUI(shapes);
+    }, 1000);
   }
 }
 

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { loadFloatingObjects, updateFloatingObjects } from './floating-objects.js';
+import { loadFloatingObjects, updateFloatingObjects, shapesScene, bandsScene } from './floating-objects.js';
 
-let scene, camera, renderer, model;
+let scene, camera, renderer, model, bandsCamera;
 let mouseRotX = 0, mouseRotY = 0;
 let currentMouseX = 0, currentMouseY = 0;
 
@@ -30,6 +30,9 @@ export function initBust() {
     100
   );
   camera.position.set(0, 0.57, 1.8);
+
+  bandsCamera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+  bandsCamera.position.set(0, 0.57, 1.8);
 
   renderer = new THREE.WebGLRenderer({
     canvas,
@@ -142,6 +145,10 @@ function onResize() {
 
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  if (bandsCamera) {
+    bandsCamera.aspect = w / h;
+    bandsCamera.updateProjectionMatrix();
+  }
   renderer.setSize(w, h);
 
   /* Rebuild the low-res target at new dimensions */
@@ -166,15 +173,37 @@ function animate() {
 
   updateFloatingObjects(elapsed);
 
-  /* 1) Render scene into low-res RT (with alpha) */
+  const hero = document.getElementById('hero');
+  const rect = hero ? hero.getBoundingClientRect() : null;
+
+  /* 1) Render bands at full resolution with static camera, clipped to hero */
+  renderer.setRenderTarget(null);
+  renderer.clear(true, true, true);
+
+  if (rect && rect.bottom > 0) {
+    const bottom = window.innerHeight - rect.bottom;
+    renderer.setScissorTest(true);
+    renderer.setScissor(0, bottom, window.innerWidth, rect.height);
+    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+    renderer.render(bandsScene, bandsCamera);
+    renderer.setScissorTest(false);
+  }
+
+  /* 2) Render bust + shapes into low-res RT (pixelated) */
   renderer.setRenderTarget(lowResRT);
   renderer.clear(true, true, true);
   renderer.render(scene, camera);
 
-  /* 2) Blit low-res texture to screen with nearest-neighbor = pixelated look */
+  /* 3) Blit pixelated bust ON TOP, clipped to hero */
   renderer.setRenderTarget(null);
-  renderer.clear(true, true, true);
-  renderer.render(blitScene, blitCamera);
+  if (rect && rect.bottom > 0) {
+    const bottom = window.innerHeight - rect.bottom;
+    renderer.setScissorTest(true);
+    renderer.setScissor(0, bottom, window.innerWidth, rect.height);
+    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+    renderer.render(blitScene, blitCamera);
+    renderer.setScissorTest(false);
+  }
 }
 
 export function getModel() { return model; }
