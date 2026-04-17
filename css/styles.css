@@ -120,3 +120,89 @@ img {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+
+
+/* ─── Hero ───────────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+#bust-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+
+/* ─── Marquee Bands ──────────────────────────────────────────── */
+
+.hero__band {
+  position: absolute;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero__band-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: band-scroll 20s linear infinite;
+}
+
+.hero__band-track--reverse {
+  animation-direction: reverse;
+}
+
+.hero__band-text {
+  font-family: var(--font-display);
+  letter-spacing: 2px;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+@keyframes band-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.hero__band--1 {
+  top: 12%;
+  left: -10%;
+  right: -10%;
+  transform: rotate(-4deg);
+  background: var(--bg-blue);
+  color: white;
+  padding: 14px 0;
+  font-size: 28px;
+}
+
+.hero__band--2 {
+  top: 38%;
+  left: -10%;
+  right: -10%;
+  transform: rotate(-6deg);
+  background: var(--bg-blue);
+  color: white;
+  padding: 20px 0;
+  font-size: 72px;
+}
+
+.hero__band--3 {
+  bottom: 2%;
+  left: 0;
+  right: 0;
+  background: var(--bg-yellow);
+  color: var(--text-dark);
+  padding: 8px 0;
+  font-size: 18px;
+  z-index: 3;
+}
