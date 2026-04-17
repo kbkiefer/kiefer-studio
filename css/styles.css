@@ -571,3 +571,18 @@ img {
   letter-spacing: 2px;
   color: rgba(255, 255, 255, 0.15);
 }
+
+@media (max-width: 768px) {
+  #bust-canvas { display: none; }
+  .nav__left { display: none; }
+  .nav__right .nav__link { display: none; }
+  .hero__band--1 { font-size: 18px; top: 15%; }
+  .hero__band--2 { font-size: 40px; top: 35%; }
+  .project-card { min-width: 300px; }
+  .projects__ghost { display: none; }
+  .services__grid { grid-template-columns: 1fr; }
+  .section { padding: 80px 20px; }
+  .section__text { font-size: 20px; }
+  .footer { padding: 60px 20px 32px; }
+  .footer__bottom { flex-direction: column; gap: 24px; align-items: flex-start; }
+}
