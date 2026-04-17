@@ -2,11 +2,29 @@ import Lenis from '@studio-freight/lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
-import { getModel, getCamera, getCanvas } from './bust.js';
+import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation } from './bust.js';
+import { initDebugGUI, scrollConfig, modelConfig, setTimelineProgress } from './debug-gui.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
 let lenis;
+
+function applyScrollToModel(p) {
+  const camera = getCamera();
+  if (!camera) return;
+
+  const cfg = scrollConfig;
+
+  setScrollRotation(
+    modelConfig.rotOffsetX,
+    p * cfg.rotationY + modelConfig.rotOffsetY,
+    modelConfig.rotOffsetZ
+  );
+
+  camera.position.x = modelConfig.posX;
+  camera.position.y = cfg.camStartY + p * (cfg.camEndY - cfg.camStartY);
+  camera.position.z = cfg.camStartZ + p * (cfg.camEndZ - cfg.camStartZ);
+}
 
 export function initScrollAnimations() {
   lenis = new Lenis({
@@ -21,6 +39,12 @@ export function initScrollAnimations() {
 
   initBustScroll();
   initTextReveals();
+
+  initDebugGUI(
+    (p) => { applyScrollToModel(p); },
+    lights,
+    rebuildPixelBlit
+  );
 }
 
 function initBustScroll() {
@@ -30,17 +54,13 @@ function initBustScroll() {
   if (!model || !canvas) return;
 
   ScrollTrigger.create({
-    trigger: '#hero',
+    trigger: 'body',
     start: 'top top',
-    end: 'bottom top',
-    scrub: 1,
+    end: () => `+=${scrollConfig.scrollLength}%`,
+    scrub: scrollConfig.scrub,
     onUpdate: (self) => {
-      const p = self.progress;
-      // Set rotation directly (not accumulate) so scrubbing works correctly
-      model.rotation.y = p * Math.PI * 0.5;
-      camera.position.y = 0.5 - p * 0.8;
-      camera.position.z = 4.5 - p * 2.0;
-      canvas.style.opacity = 1 - p * 1.5;
+      setTimelineProgress(self.progress);
+      applyScrollToModel(self.progress);
     },
   });
 }

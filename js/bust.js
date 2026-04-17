@@ -2,18 +2,23 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 let scene, camera, renderer, model;
-let targetRotX = 0, targetRotY = 0;
-let currentRotX = 0, currentRotY = 0;
+let mouseRotX = 0, mouseRotY = 0;
+let currentMouseX = 0, currentMouseY = 0;
 
-const PIXEL_SIZE = 6;
+export let scrollRotX = 0, scrollRotY = 0, scrollRotZ = 0;
+
+let pixelSize = 7;
 let canvas;
 
 /* Low-res render target + full-screen blit for pixelated transparency */
 let lowResRT, blitScene, blitCamera, blitMesh;
 
+/* Exported light refs for debug GUI */
+export const lights = {};
+
 export function initBust() {
   canvas = document.getElementById('bust-canvas');
-  if (!canvas || window.innerWidth < 768) return;
+  if (!canvas) return;
 
   scene = new THREE.Scene();
 
@@ -23,7 +28,7 @@ export function initBust() {
     0.1,
     100
   );
-  camera.position.set(0, 0.5, 4.5);
+  camera.position.set(0, 0.57, 1.8);
 
   renderer = new THREE.WebGLRenderer({
     canvas,
@@ -38,17 +43,17 @@ export function initBust() {
 
   setupPixelBlit();
 
-  /* Lighting */
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambientLight);
+  /* Lighting: high contrast for strong shadows like Rob's bust */
+  lights.ambient = new THREE.AmbientLight(0xffffff, 0);
+  scene.add(lights.ambient);
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(2, 3, 4);
-  scene.add(dirLight);
+  lights.key = new THREE.DirectionalLight(0xffffff, 3.28);
+  lights.key.position.set(3, 6.1, 3.5);
+  scene.add(lights.key);
 
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-  fillLight.position.set(-2, 0, 2);
-  scene.add(fillLight);
+  lights.rim = new THREE.DirectionalLight(0xffffff, 0.56);
+  lights.rim.position.set(-5.4, 10, -1);
+  scene.add(lights.rim);
 
   /* Load model */
   const loader = new GLTFLoader();
@@ -73,6 +78,7 @@ export function initBust() {
 
     model.position.sub(center);
     model.position.y += size.y * 0.05;
+    model.scale.setScalar(1.3);
 
     scene.add(model);
     animate();
@@ -82,9 +88,14 @@ export function initBust() {
   window.addEventListener('resize', onResize);
 }
 
+export function rebuildPixelBlit(newSize) {
+  pixelSize = newSize || pixelSize;
+  setupPixelBlit();
+}
+
 function setupPixelBlit() {
-  const w = Math.ceil(window.innerWidth / PIXEL_SIZE);
-  const h = Math.ceil(window.innerHeight / PIXEL_SIZE);
+  const w = Math.ceil(window.innerWidth / pixelSize);
+  const h = Math.ceil(window.innerHeight / pixelSize);
 
   lowResRT = new THREE.WebGLRenderTarget(w, h, {
     minFilter: THREE.NearestFilter,
@@ -111,8 +122,14 @@ function setupPixelBlit() {
 function onMouseMove(e) {
   const x = (e.clientX / window.innerWidth - 0.5) * 2;
   const y = (e.clientY / window.innerHeight - 0.5) * 2;
-  targetRotY = x * 0.15;
-  targetRotX = -y * 0.08;
+  mouseRotY = x * 0.15;
+  mouseRotX = -y * 0.08;
+}
+
+export function setScrollRotation(x, y, z) {
+  scrollRotX = x;
+  scrollRotY = y;
+  scrollRotZ = z;
 }
 
 function onResize() {
@@ -126,8 +143,8 @@ function onResize() {
   renderer.setSize(w, h);
 
   /* Rebuild the low-res target at new dimensions */
-  const lw = Math.ceil(w / PIXEL_SIZE);
-  const lh = Math.ceil(h / PIXEL_SIZE);
+  const lw = Math.ceil(w / pixelSize);
+  const lh = Math.ceil(h / pixelSize);
   lowResRT.setSize(lw, lh);
 }
 
@@ -135,10 +152,11 @@ function animate() {
   requestAnimationFrame(animate);
 
   if (model) {
-    currentRotX += (targetRotX - currentRotX) * 0.05;
-    currentRotY += (targetRotY - currentRotY) * 0.05;
-    model.rotation.x = currentRotX;
-    model.rotation.y = currentRotY;
+    currentMouseX += (mouseRotX - currentMouseX) * 0.05;
+    currentMouseY += (mouseRotY - currentMouseY) * 0.05;
+    model.rotation.x = scrollRotX + currentMouseX;
+    model.rotation.y = scrollRotY + currentMouseY;
+    model.rotation.z = scrollRotZ;
   }
 
   /* 1) Render scene into low-res RT (with alpha) */

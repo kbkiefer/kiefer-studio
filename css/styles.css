@@ -133,12 +133,12 @@ img {
 }
 
 #bust-canvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 2;
+  z-index: 50;
   pointer-events: none;
 }
 
@@ -215,6 +215,9 @@ img {
   overflow: hidden;
   border-top: 1.5px solid var(--border-light);
   border-bottom: 1.5px solid var(--border-light);
+  position: relative;
+  z-index: 10;
+  background: var(--bg-base);
 }
 
 .marquee__track {
@@ -263,6 +266,8 @@ img {
 
 .section {
   padding: 120px 32px;
+  position: relative;
+  z-index: 10;
 }
 
 .section--blue {
@@ -338,6 +343,8 @@ img {
   background: var(--bg-dark);
   color: white;
   padding: 80px 0;
+  position: relative;
+  z-index: 10;
 }
 
 .projects__header {
@@ -515,6 +522,8 @@ img {
   background: var(--bg-dark);
   color: white;
   padding: 100px 32px 48px;
+  position: relative;
+  z-index: 10;
 }
 
 .footer__cta {
@@ -573,7 +582,7 @@ img {
 }
 
 @media (max-width: 768px) {
-  #bust-canvas { display: none; }
+  #bust-canvas { pointer-events: none; }
   .nav__left { display: none; }
   .nav__right .nav__link { display: none; }
   .hero__band--1 { font-size: 18px; top: 15%; }
