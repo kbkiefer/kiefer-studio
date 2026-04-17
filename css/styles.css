@@ -341,15 +341,56 @@ img {
 }
 
 
-/* ─── Work Globe ─────────────────────────────────────────────── */
+/* ─── Work Grid ──────────────────────────────────────────────── */
 
 .work {
-  background: var(--bg-dark);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 0, 0, 0.04) 39px,
+      rgba(0, 0, 0, 0.04) 40px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 0, 0, 0.04) 39px,
+      rgba(0, 0, 0, 0.04) 40px
+    ),
+    var(--bg-base);
   position: relative;
   z-index: 10;
   height: 100vh;
   overflow: hidden;
   cursor: grab;
+}
+
+.work__label {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  z-index: 6;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-dark);
+  opacity: 0.4;
+}
+
+.work__hint {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  z-index: 6;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dark);
+  opacity: 0.3;
 }
 
 .work__grid {
@@ -358,27 +399,111 @@ img {
   height: 100%;
 }
 
-.work__grid canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+.work__cell {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+
+.work__cell.is-active {
+  cursor: pointer;
+}
+
+.work__cell-bg {
+  position: absolute;
+  inset: 0;
+  transition: filter 0.3s, transform 0.3s;
+  filter: brightness(0.7) saturate(0.6);
+}
+
+.work__cell:hover .work__cell-bg {
+  filter: brightness(0.85) saturate(0.8);
+  transform: scale(1.05);
+}
+
+.work__cell.is-active .work__cell-bg {
+  filter: brightness(1) saturate(1);
+  transform: scale(1);
+}
+
+.work__cell.is-active {
+  box-shadow: 0 0 0 3px var(--bg-yellow), 0 0 40px rgba(255, 255, 62, 0.2);
+}
+
+.work__cell-name {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: white;
+  text-align: center;
+  padding: 0 20px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.3s;
+}
+
+.work__cell.is-active .work__cell-name {
+  opacity: 1;
+  transform: translateY(0);
+  animation: nameReveal 0.4s ease-out;
+}
+
+@keyframes nameReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scaleX(0.8);
+    letter-spacing: 8px;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+    letter-spacing: 3px;
+  }
+}
+
+.work__cell-tags {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-top: 8px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.work__cell.is-active .work__cell-tags {
+  opacity: 1;
 }
 
 .work__focus {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 424px;
+  height: 324px;
   pointer-events: none;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: top 0.15s ease-out, left 0.15s ease-out, width 0.15s ease-out, height 0.15s ease-out;
 }
 
 .work__focus-bracket {
   position: absolute;
-  width: 32px;
-  height: 32px;
-  border-color: white;
+  width: 36px;
+  height: 36px;
+  border-color: var(--bg-yellow);
   border-style: solid;
 }
 
@@ -407,13 +532,7 @@ img {
 }
 
 .work__focus-name {
-  font-family: var(--font-display);
-  font-size: clamp(24px, 4vw, 40px);
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: white;
-  text-align: center;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+  display: none;
 }
 
 /* ─── Work Modal ─────────────────────────────────────────────── */
@@ -631,7 +750,8 @@ img {
   .nav__right .nav__link { display: none; }
   .hero__band--1 { font-size: 18px; top: 15%; }
   .hero__band--2 { font-size: 40px; top: 35%; }
-  .work__active-name { font-size: 20px; }
+  .work__focus { width: 280px; height: 220px; }
+  .work__focus-name { font-size: 18px; }
   .work-modal__body { padding: 32px; }
   .services__grid { grid-template-columns: 1fr; }
   .section { padding: 80px 20px; }

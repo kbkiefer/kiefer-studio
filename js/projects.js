@@ -1,75 +1,62 @@
-import * as THREE from 'three';
-
 const PROJECTS = [
-  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Visualization', color: 0x1a2a8e, desc: 'Real-time audio visualization powered by Metal shaders. Transform sound into mesmerizing cymatics patterns on iOS.' },
-  { name: 'Imago', tags: 'iOS _ AI _ ADHD Companion', color: 0x1a6e2a, desc: 'An ADHD companion app using on-device AI to help with task management, focus, and daily routines.' },
-  { name: 'Border Child', tags: 'Web _ React Three Fiber _ Film', color: 0x6e4e1a, desc: 'Cinematic scroll-driven website for a Laredo creative studio. React Three Fiber, post-processing, and immersive storytelling.' },
-  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading Terminal', color: 0x1a4e6e, desc: 'A sovereign trading terminal for macOS built with SwiftUI and Liquid Glass. Real-time market data visualization.' },
-  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', color: 0x4e1a6e, desc: 'A consciousness instrument combining Metal cymatics, audio entrainment, and Apple Watch heart rate monitoring.' },
-  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', color: 0x6e1a1a, desc: 'ADHD neural map task manager. Six life areas, AI categorization, and looming thoughts visualization.' },
-  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', color: 0x6e6e1a, desc: 'A 3D game about transformation. Play as a caterpillar becoming a butterfly at two different scales.' },
-  { name: 'ShalaMakes', tags: 'Web _ 3D Printing _ Store', color: 0x1a6e6e, desc: 'E-commerce storefront for custom 3D printed products. Static HTML, Stripe payments, GitHub Actions deploy.' },
-  { name: 'Continuum', tags: 'macOS _ Vision _ AI Perception', color: 0x2a2a5e, desc: 'Local continuous visual perception for Apple Silicon. SigLIP + Qwen2-VL at 20 FPS.' },
+  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Visualization', color: '#012FFF', desc: 'Real-time audio visualization powered by Metal shaders. Transform sound into mesmerizing cymatics patterns on iOS.' },
+  { name: 'Imago', tags: 'iOS _ AI _ ADHD Companion', color: '#22cc55', desc: 'An ADHD companion app using on-device AI to help with task management, focus, and daily routines.' },
+  { name: 'Border Child', tags: 'Web _ R3F _ Film', color: '#cc8822', desc: 'Cinematic scroll-driven website for a Laredo creative studio. React Three Fiber and immersive storytelling.' },
+  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading', color: '#2299cc', desc: 'A sovereign trading terminal for macOS built with SwiftUI and Liquid Glass.' },
+  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', color: '#8822cc', desc: 'A consciousness instrument combining Metal cymatics, audio entrainment, and Watch HR.' },
+  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', color: '#cc2244', desc: 'ADHD neural map task manager. Six life areas, AI categorization, looming thoughts.' },
+  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', color: '#ccaa22', desc: 'A 3D game about transformation. Caterpillar to butterfly at two different scales.' },
+  { name: 'ShalaMakes', tags: 'Web _ 3D Printing _ Store', color: '#22ccaa', desc: 'E-commerce for custom 3D printed products. Static HTML, Stripe, GitHub Actions.' },
+  { name: 'Continuum', tags: 'macOS _ Vision _ AI', color: '#4455cc', desc: 'Local continuous visual perception for Apple Silicon. SigLIP + Qwen2-VL at 20 FPS.' },
 ];
 
-const SPHERE_RADIUS = 4;
-const COLS = 6;
-const ROWS = 4;
+const COLS = 3;
+const CELL_W = 420;
+const CELL_H = 320;
+const GAP = 4;
 
-let scene, camera, renderer;
-let sphereGroup;
-let targetRotY = 0, targetRotX = 0;
-let currentRotY = 0, currentRotX = 0;
-let isDragging = false, hasDragged = false;
-let dragStartX, dragStartY;
-let cards = [];
-let focusNameEl = null;
-let snapping = false;
+let offsetX = 0, offsetY = 0;
+let dragStartX, dragStartY, startOffsetX, startOffsetY;
+let isDragging = false;
+let hasDragged = false;
+let activeIndex = -1;
 
 export function initProjects() {
-  const container = document.getElementById('work-grid');
+  const grid = document.getElementById('work-grid');
   const modal = document.getElementById('work-modal');
   const modalClose = document.getElementById('work-modal-close');
-  if (!container) return;
+  if (!grid) return;
 
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
+  const rows = Math.ceil(PROJECTS.length / COLS);
+  const totalW = COLS * (CELL_W + GAP);
+  const totalH = rows * (CELL_H + GAP);
 
-  const w = container.offsetWidth;
-  const h = container.offsetHeight;
+  offsetX = -(totalW - grid.offsetWidth) / 2;
+  offsetY = -(totalH - grid.offsetHeight) / 2;
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x202020);
+  for (let i = 0; i < PROJECTS.length; i++) {
+    const p = PROJECTS[i];
+    const cell = document.createElement('div');
+    cell.className = 'work__cell';
+    cell.dataset.index = i;
+    cell.innerHTML = `
+      <div class="work__cell-bg" style="background:${p.color}"></div>
+      <span class="work__cell-name">${p.name}</span>
+      <span class="work__cell-tags">${p.tags}</span>
+    `;
+    grid.appendChild(cell);
+  }
 
-  camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-  camera.position.set(0, 0, 8);
+  updateGrid(grid);
 
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setSize(w, h);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-  scene.add(ambient);
-
-  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-  dir.position.set(2, 3, 5);
-  scene.add(dir);
-
-  sphereGroup = new THREE.Group();
-  scene.add(sphereGroup);
-
-  focusNameEl = document.getElementById('work-focus-name');
-
-  buildCards();
-  animate();
-
-  container.addEventListener('mousedown', (e) => {
+  grid.addEventListener('mousedown', (e) => {
     isDragging = true;
     hasDragged = false;
-    snapping = false;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
-    container.style.cursor = 'grabbing';
+    startOffsetX = offsetX;
+    startOffsetY = offsetY;
+    grid.style.cursor = 'grabbing';
   });
 
   window.addEventListener('mousemove', (e) => {
@@ -77,26 +64,25 @@ export function initProjects() {
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-    targetRotY += dx * 0.004;
-    targetRotX -= dy * 0.003;
-    targetRotX = Math.max(-0.6, Math.min(0.6, targetRotX));
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
+    offsetX = startOffsetX + dx;
+    offsetY = startOffsetY + dy;
+    updateGrid(grid);
   });
 
   window.addEventListener('mouseup', () => {
     if (!isDragging) return;
     isDragging = false;
-    container.style.cursor = 'grab';
-    snapToNearest();
+    grid.style.cursor = 'grab';
+    snapToCenter(grid);
   });
 
-  container.addEventListener('touchstart', (e) => {
+  grid.addEventListener('touchstart', (e) => {
     isDragging = true;
     hasDragged = false;
-    snapping = false;
     dragStartX = e.touches[0].clientX;
     dragStartY = e.touches[0].clientY;
+    startOffsetX = offsetX;
+    startOffsetY = offsetY;
   }, { passive: true });
 
   window.addEventListener('touchmove', (e) => {
@@ -104,31 +90,22 @@ export function initProjects() {
     const dx = e.touches[0].clientX - dragStartX;
     const dy = e.touches[0].clientY - dragStartY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-    targetRotY += dx * 0.004;
-    targetRotX -= dy * 0.003;
-    targetRotX = Math.max(-0.6, Math.min(0.6, targetRotX));
-    dragStartX = e.touches[0].clientX;
-    dragStartY = e.touches[0].clientY;
+    offsetX = startOffsetX + dx;
+    offsetY = startOffsetY + dy;
+    updateGrid(grid);
   }, { passive: true });
 
   window.addEventListener('touchend', () => {
     if (!isDragging) return;
     isDragging = false;
-    snapToNearest();
+    snapToCenter(grid);
   });
 
-  container.addEventListener('click', (e) => {
+  grid.addEventListener('click', (e) => {
     if (hasDragged) return;
-    const active = getActiveCard();
-    if (active) openModal(active.project);
-  });
-
-  window.addEventListener('resize', () => {
-    const w2 = container.offsetWidth;
-    const h2 = container.offsetHeight;
-    camera.aspect = w2 / h2;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w2, h2);
+    const cell = e.target.closest('.work__cell');
+    if (!cell || !cell.classList.contains('is-active')) return;
+    openModal(PROJECTS[activeIndex]);
   });
 
   modalClose.addEventListener('click', closeModal);
@@ -136,109 +113,73 @@ export function initProjects() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 }
 
-function buildCards() {
-  const thetaStep = (Math.PI * 2) / COLS;
-  const phiStep = Math.PI / (ROWS + 1);
+function updateGrid(grid) {
+  const cells = grid.querySelectorAll('.work__cell');
+  const cx = grid.offsetWidth / 2;
+  const cy = grid.offsetHeight / 2;
+  let closestIdx = -1;
+  let closestDist = Infinity;
 
-  const cardW = 2 * SPHERE_RADIUS * Math.sin(thetaStep / 2) * 0.92;
-  const cardH = SPHERE_RADIUS * phiStep * 0.88;
+  cells.forEach((cell, i) => {
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
+    const x = offsetX + col * (CELL_W + GAP);
+    const y = offsetY + row * (CELL_H + GAP);
 
-  let pi = 0;
+    cell.style.transform = `translate(${x}px, ${y}px)`;
+    cell.style.width = CELL_W + 'px';
+    cell.style.height = CELL_H + 'px';
 
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const project = PROJECTS[pi % PROJECTS.length];
-      pi++;
+    const cellCx = x + CELL_W / 2;
+    const cellCy = y + CELL_H / 2;
+    const dist = Math.hypot(cellCx - cx, cellCy - cy);
 
-      const phi = phiStep * (row + 1);
-      const theta = thetaStep * col;
-
-      const geo = new THREE.PlaneGeometry(cardW, cardH);
-      const mat = new THREE.MeshStandardMaterial({
-        color: project.color,
-        roughness: 0.6,
-        metalness: 0.1,
-        side: THREE.DoubleSide,
-      });
-
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.setFromSphericalCoords(SPHERE_RADIUS, phi, theta);
-      mesh.lookAt(0, 0, 0);
-      mesh.rotateY(Math.PI);
-
-      sphereGroup.add(mesh);
-      cards.push({ mesh, project, phi, theta });
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestIdx = i;
     }
+
+    cell.classList.remove('is-active');
+  });
+
+  if (closestIdx >= 0) {
+    cells[closestIdx].classList.add('is-active');
+    activeIndex = closestIdx;
+    const nameEl = document.getElementById('work-focus-name');
+    if (nameEl) nameEl.textContent = PROJECTS[closestIdx].name;
   }
 }
 
-function snapToNearest() {
-  const active = getActiveCard();
-  if (!active) return;
+function snapToCenter(grid) {
+  if (activeIndex < 0) return;
 
-  const thetaStep = (Math.PI * 2) / COLS;
-  const phiStep = Math.PI / (ROWS + 1);
+  const cx = grid.offsetWidth / 2;
+  const cy = grid.offsetHeight / 2;
+  const col = activeIndex % COLS;
+  const row = Math.floor(activeIndex / COLS);
 
-  const currentTheta = ((targetRotY % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const nearestCol = Math.round(currentTheta / thetaStep);
-  const snapTheta = nearestCol * thetaStep;
+  const targetX = cx - col * (CELL_W + GAP) - CELL_W / 2;
+  const targetY = cy - row * (CELL_H + GAP) - CELL_H / 2;
 
-  const nearestRow = Math.round((targetRotX + phiStep) / phiStep);
-  const snapPhi = Math.max(-0.6, Math.min(0.6, (nearestRow - 1) * phiStep * 0.3));
+  const startX = offsetX;
+  const startY = offsetY;
+  const duration = 300;
+  const start = performance.now();
 
-  const diffY = snapTheta - (targetRotY % (Math.PI * 2));
-  targetRotY += diffY;
-  targetRotX = snapPhi;
-  snapping = true;
-}
-
-function getActiveCard() {
-  let closest = null;
-  let closestDot = -Infinity;
-  const camDir = new THREE.Vector3(0, 0, -1);
-
-  for (const card of cards) {
-    const cardPos = new THREE.Vector3();
-    card.mesh.getWorldPosition(cardPos);
-    cardPos.normalize();
-    const dot = cardPos.dot(camDir);
-    if (dot > closestDot) {
-      closestDot = dot;
-      closest = card;
-    }
-  }
-  return closest;
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const lerpSpeed = snapping ? 0.12 : 0.08;
-  currentRotY += (targetRotY - currentRotY) * lerpSpeed;
-  currentRotX += (targetRotX - currentRotX) * lerpSpeed;
-
-  sphereGroup.rotation.y = currentRotY;
-  sphereGroup.rotation.x = currentRotX;
-
-  if (!isDragging && !snapping) {
-    targetRotY += 0.0005;
+  function ease(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
-  const active = getActiveCard();
-  if (active && focusNameEl) {
-    focusNameEl.textContent = active.project.name;
+  function step(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const p = ease(t);
+    offsetX = startX + (targetX - startX) * p;
+    offsetY = startY + (targetY - startY) * p;
+    updateGrid(grid);
+    if (t < 1) requestAnimationFrame(step);
   }
 
-  for (const card of cards) {
-    const worldPos = new THREE.Vector3();
-    card.mesh.getWorldPosition(worldPos);
-    const dot = worldPos.normalize().dot(new THREE.Vector3(0, 0, 1));
-    const brightness = THREE.MathUtils.clamp(dot * 1.5 + 0.2, 0.1, 1);
-    card.mesh.material.opacity = brightness;
-    card.mesh.material.transparent = brightness < 0.99;
-  }
-
-  renderer.render(scene, camera);
+  requestAnimationFrame(step);
 }
 
 function openModal(project) {
@@ -248,7 +189,7 @@ function openModal(project) {
   const tags = document.getElementById('work-modal-tags');
   const body = document.getElementById('work-modal-body');
 
-  hero.style.background = `linear-gradient(135deg, #${(project.color >> 1 & 0x7f7f7f).toString(16).padStart(6, '0')}, #${project.color.toString(16).padStart(6, '0')})`;
+  hero.style.background = project.color;
   title.textContent = project.name;
   tags.textContent = project.tags;
   body.innerHTML = `<p>${project.desc}</p>`;
