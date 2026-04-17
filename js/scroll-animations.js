@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
 import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation } from './bust.js';
+import { setFloatingObjectsVisible } from './floating-objects.js';
 import { initDebugGUI, scrollConfig, modelConfig, setTimelineProgress } from './debug-gui.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -38,6 +39,7 @@ export function initScrollAnimations() {
   gsap.ticker.lagSmoothing(0);
 
   initBustScroll();
+  initFloatingObjectsScroll();
   initTextReveals();
 
   initDebugGUI(
@@ -62,6 +64,15 @@ function initBustScroll() {
       setTimelineProgress(self.progress);
       applyScrollToModel(self.progress);
     },
+  });
+}
+
+function initFloatingObjectsScroll() {
+  ScrollTrigger.create({
+    trigger: '#hero',
+    start: 'bottom 90%',
+    onEnterBack: () => setFloatingObjectsVisible(true),
+    onLeave: () => setFloatingObjectsVisible(false),
   });
 }
 

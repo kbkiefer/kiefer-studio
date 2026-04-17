@@ -34,7 +34,7 @@ export const lightConfig = {
 };
 
 export const pixelConfig = {
-  pixelSize: 7,
+  pixelSize: 8,
 };
 
 let gui;

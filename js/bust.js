@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadFloatingObjects, updateFloatingObjects } from './floating-objects.js';
 
 let scene, camera, renderer, model;
 let mouseRotX = 0, mouseRotY = 0;
@@ -7,7 +8,7 @@ let currentMouseX = 0, currentMouseY = 0;
 
 export let scrollRotX = 0, scrollRotY = 0, scrollRotZ = 0;
 
-let pixelSize = 7;
+let pixelSize = 8;
 let canvas;
 
 /* Low-res render target + full-screen blit for pixelated transparency */
@@ -62,8 +63,8 @@ export function initBust() {
 
     const greyMat = new THREE.MeshStandardMaterial({
       color: 0x888888,
-      roughness: 0.95,
-      metalness: 0.0,
+      roughness: 0.7,
+      metalness: 0.3,
     });
 
     model.traverse((child) => {
@@ -81,6 +82,7 @@ export function initBust() {
     model.scale.setScalar(1.3);
 
     scene.add(model);
+    loadFloatingObjects(scene);
     animate();
   });
 
@@ -148,8 +150,11 @@ function onResize() {
   lowResRT.setSize(lw, lh);
 }
 
+const clock = new THREE.Clock();
+
 function animate() {
   requestAnimationFrame(animate);
+  const elapsed = clock.getElapsedTime();
 
   if (model) {
     currentMouseX += (mouseRotX - currentMouseX) * 0.05;
@@ -158,6 +163,8 @@ function animate() {
     model.rotation.y = scrollRotY + currentMouseY;
     model.rotation.z = scrollRotZ;
   }
+
+  updateFloatingObjects(elapsed);
 
   /* 1) Render scene into low-res RT (with alpha) */
   renderer.setRenderTarget(lowResRT);
