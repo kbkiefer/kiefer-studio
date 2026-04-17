@@ -1,1 +1,3 @@
-console.log('kiefer.studio loaded');
+import { initBust } from './bust.js';
+
+initBust();
