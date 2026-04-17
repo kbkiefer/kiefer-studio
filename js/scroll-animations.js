@@ -11,11 +11,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 let lenis;
 
+const mobileOverrides = window.innerWidth <= 768 ? { camStartZ: 2.8, camStartY: 0.5 } : {};
+
 function applyScrollToModel(p) {
   const camera = getCamera();
   if (!camera) return;
 
   const cfg = scrollConfig;
+  const startY = mobileOverrides.camStartY || cfg.camStartY;
+  const startZ = mobileOverrides.camStartZ || cfg.camStartZ;
 
   setScrollRotation(
     modelConfig.rotOffsetX,
@@ -24,8 +28,8 @@ function applyScrollToModel(p) {
   );
 
   camera.position.x = cfg.camStartX + getExitOffsetX();
-  camera.position.y = cfg.camStartY + p * (cfg.camEndY - cfg.camStartY);
-  camera.position.z = cfg.camStartZ + p * (cfg.camEndZ - cfg.camStartZ);
+  camera.position.y = startY + p * (cfg.camEndY - startY);
+  camera.position.z = startZ + p * (cfg.camEndZ - startZ);
 }
 
 export function initScrollAnimations() {

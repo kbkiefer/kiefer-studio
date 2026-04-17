@@ -10,8 +10,9 @@ export function initNavLogo() {
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
 
-  const width = 120;
-  const height = 55;
+  const isMobile = window.innerWidth <= 768;
+  const width = isMobile ? 60 : 120;
+  const height = isMobile ? 40 : 55;
 
   scene = new THREE.Scene();
 

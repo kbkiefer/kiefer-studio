@@ -30,7 +30,8 @@ export function initBust() {
     0.1,
     100
   );
-  camera.position.set(0, 0.61, 1.9);
+  const isMobile = window.innerWidth <= 768;
+  camera.position.set(0, isMobile ? 0.5 : 0.61, isMobile ? 2.8 : 1.9);
 
   bandsCamera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
   bandsCamera.position.set(0, 0.57, 1.8);

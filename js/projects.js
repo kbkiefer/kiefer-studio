@@ -10,9 +10,10 @@ const PROJECTS = [
   { name: 'Continuum', tags: 'macOS _ Vision _ AI', color: '#4455cc', desc: 'Local continuous visual perception for Apple Silicon. SigLIP + Qwen2-VL at 20 FPS.' },
 ];
 
-const COLS = 3;
-const CELL_W = 420;
-const CELL_H = 320;
+const isMobile = window.innerWidth <= 768;
+const COLS = isMobile ? 2 : 3;
+const CELL_W = isMobile ? 260 : 420;
+const CELL_H = isMobile ? 200 : 320;
 const GAP = 4;
 
 let offsetX = 0, offsetY = 0;
