@@ -42,11 +42,13 @@ export function initScrollAnimations() {
   initFloatingObjectsScroll();
   initTextReveals();
 
-  initDebugGUI(
-    (p) => { applyScrollToModel(p); },
-    lights,
-    rebuildPixelBlit
-  );
+  if (window.location.hash === '#debug') {
+    initDebugGUI(
+      (p) => { applyScrollToModel(p); },
+      lights,
+      rebuildPixelBlit
+    );
+  }
 }
 
 function initBustScroll() {
