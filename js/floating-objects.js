@@ -4,7 +4,7 @@ import { createBorderlandsMaterial } from './borderlands-material.js';
 import { createTrail, updateTrails, setTrailsVisible } from './element-trails.js';
 
 const SHAPES = [
-  { type: 'dodecahedron', color: 0xd4940e, orbit: 5, speed: 0.19, yOffset: 2.25, bobSpeed: 0.5, bobAmp: 0.08, phase: 0, size: 0.41, zOffset: -5.9 },
+  { type: 'dodecahedron', color: 0x8822cc, orbit: 5, speed: 0.19, yOffset: 2.25, bobSpeed: 0.5, bobAmp: 0.08, phase: 0, size: 0.41, zOffset: -5.9 },
   { type: 'octahedron', color: 0xf0e000, orbit: 5, speed: 0.42, yOffset: 0.9, bobSpeed: 0.8, bobAmp: 0.06, phase: 1.2, size: 0.43, zOffset: -4.15 },
   { type: 'box', color: 0x00a838, orbit: 5, speed: 0.15, yOffset: 0.05, bobSpeed: 0.45, bobAmp: 0.07, phase: 2.5, size: 0.41, zOffset: -4.75 },
   { type: 'tetrahedron', color: 0xee2200, orbit: 5, speed: 0.35, yOffset: -0.75, bobSpeed: 0.65, bobAmp: 0.06, phase: 0.8, size: 0.41, zOffset: -4.45 },
@@ -15,7 +15,7 @@ const OUTLINE_THICKNESS = 0.1;
 const loadedObjects = [];
 const objectsMap = {};
 let visible = true;
-let lastTime = 0;
+let lastTime = -1;
 
 export const shapesScene = new THREE.Scene();
 export const bandsScene = new THREE.Scene();
@@ -56,7 +56,7 @@ export function loadFloatingObjects(scene) {
   createBands3D(bandsScene);
 
   for (const cfg of SHAPES) {
-    /* Shapes go into the main bust scene (passed as 'scene' arg) for pixelation */
+    /* Shapes go into bands scene (static camera, clipped to hero) */
     const geo = createGeometry(cfg.type, cfg.size);
     geo.computeVertexNormals();
 
@@ -70,9 +70,9 @@ export function loadFloatingObjects(scene) {
     group.add(outline);
     group.add(mesh);
     group.position.z = cfg.zOffset;
-    scene.add(group);
+    bandsScene.add(group);
 
-    createTrail(cfg.type, scene);
+    createTrail(cfg.type, bandsScene);
 
     loadedObjects.push({
       name: cfg.type,
@@ -194,6 +194,7 @@ const ELEMENT_ANIM = {
 };
 
 export function updateFloatingObjects(time) {
+  if (lastTime < 0) lastTime = time;
   const dt = time - lastTime;
   lastTime = time;
 
@@ -208,5 +209,7 @@ export function updateFloatingObjects(time) {
     objectsMap[obj.name] = obj;
   }
 
-  updateTrails(Math.min(dt, 0.05), objectsMap);
+  if (dt > 0 && dt < 0.1) {
+    updateTrails(dt, objectsMap);
+  }
 }

@@ -1,57 +1,66 @@
 import * as THREE from 'three';
 
+function toHex(n) { return '#' + n.toString(16).padStart(6, '0'); }
+
 const TRAIL_CONFIG = {
   tetrahedron: {
     color1: 0xff4400,
     color2: 0xffcc00,
-    size: 0.06,
-    count: 60,
-    lifetime: 0.8,
-    spread: 0.15,
-    speed: 0.4,
+    size: 0.15,
+    count: 80,
+    lifetime: 1.0,
+    spread: 0.2,
+    speed: 0.6,
     direction: [0, 1, 0],
   },
   octahedron: {
     color1: 0xccddff,
     color2: 0xffffff,
-    size: 0.03,
-    count: 40,
-    lifetime: 1.2,
-    spread: 0.25,
-    speed: 0.15,
+    size: 0.08,
+    count: 50,
+    lifetime: 1.5,
+    spread: 0.3,
+    speed: 0.2,
     direction: [0, 0.3, 0],
   },
   box: {
     color1: 0x664422,
     color2: 0x998866,
-    size: 0.04,
-    count: 30,
-    lifetime: 0.6,
-    spread: 0.1,
-    speed: -0.3,
+    size: 0.1,
+    count: 40,
+    lifetime: 0.8,
+    spread: 0.15,
+    speed: -0.4,
     direction: [0, -1, 0],
   },
   icosahedron: {
     color1: 0x2288ff,
     color2: 0x88ddff,
-    size: 0.05,
-    count: 50,
-    lifetime: 1.0,
-    spread: 0.2,
-    speed: 0.1,
+    size: 0.12,
+    count: 60,
+    lifetime: 1.2,
+    spread: 0.25,
+    speed: 0.15,
     direction: [0, -0.5, 0],
   },
   dodecahedron: {
     color1: 0xaa66ff,
     color2: 0xffaaff,
-    size: 0.04,
-    count: 45,
-    lifetime: 1.4,
-    spread: 0.3,
-    speed: 0.05,
+    size: 0.1,
+    count: 55,
+    lifetime: 1.6,
+    spread: 0.35,
+    speed: 0.08,
     direction: [0, 0.2, 0],
   },
 };
+
+for (const [key, cfg] of Object.entries(TRAIL_CONFIG)) {
+  cfg.color1Hex = toHex(cfg.color1);
+  cfg.color2Hex = toHex(cfg.color2);
+}
+
+export function getTrailConfig() { return TRAIL_CONFIG; }
 
 const trails = [];
 
@@ -85,9 +94,10 @@ export function createTrail(name, scene) {
 
   const mat = new THREE.PointsMaterial({
     vertexColors: true,
+    size: cfg.size * 2,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.9,
     depthWrite: false,
     blending: name === 'tetrahedron' ? THREE.AdditiveBlending : THREE.NormalBlending,
   });

@@ -7,8 +7,9 @@ let mouseRotX = 0, mouseRotY = 0;
 let currentMouseX = 0, currentMouseY = 0;
 
 export let scrollRotX = 0, scrollRotY = 0, scrollRotZ = 0;
+export let exitOffsetX = 0;
 
-let pixelSize = 8;
+let pixelSize = 11;
 let canvas;
 
 /* Low-res render target + full-screen blit for pixelated transparency */
@@ -29,7 +30,7 @@ export function initBust() {
     0.1,
     100
   );
-  camera.position.set(0, 0.57, 1.8);
+  camera.position.set(0, 0.61, 1.9);
 
   bandsCamera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
   bandsCamera.position.set(0, 0.57, 1.8);
@@ -51,11 +52,11 @@ export function initBust() {
   lights.ambient = new THREE.AmbientLight(0xffffff, 0);
   scene.add(lights.ambient);
 
-  lights.key = new THREE.DirectionalLight(0xffffff, 3.28);
-  lights.key.position.set(3, 6.1, 3.5);
+  lights.key = new THREE.DirectionalLight(0xffffff, 6.41);
+  lights.key.position.set(-2.2, 3.7, 1.5);
   scene.add(lights.key);
 
-  lights.rim = new THREE.DirectionalLight(0xffffff, 0.56);
+  lights.rim = new THREE.DirectionalLight(0xffffff, 2.07);
   lights.rim.position.set(-5.4, 10, -1);
   scene.add(lights.rim);
 
@@ -82,7 +83,7 @@ export function initBust() {
 
     model.position.sub(center);
     model.position.y += size.y * 0.05;
-    model.scale.setScalar(1.3);
+    model.scale.setScalar(1.37);
 
     scene.add(model);
     loadFloatingObjects(scene);
@@ -135,6 +136,14 @@ export function setScrollRotation(x, y, z) {
   scrollRotX = x;
   scrollRotY = y;
   scrollRotZ = z;
+}
+
+export function setExitOffsetX(x) {
+  exitOffsetX = x;
+}
+
+export function getExitOffsetX() {
+  return exitOffsetX;
 }
 
 function onResize() {
@@ -194,15 +203,22 @@ function animate() {
   renderer.clear(true, true, true);
   renderer.render(scene, camera);
 
-  /* 3) Blit pixelated bust ON TOP, clipped to hero */
+  /* 3) Blit pixelated bust ON TOP, clipped to top of screen down to bottom of blue section */
   renderer.setRenderTarget(null);
-  if (rect && rect.bottom > 0) {
-    const bottom = window.innerHeight - rect.bottom;
-    renderer.setScissorTest(true);
-    renderer.setScissor(0, bottom, window.innerWidth, rect.height);
-    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+  const statement = document.getElementById('statement');
+  if (statement) {
+    const stmtRect = statement.getBoundingClientRect();
+    const clipBottom = Math.max(0, window.innerHeight - stmtRect.bottom);
+    const clipHeight = window.innerHeight - clipBottom;
+    if (clipHeight > 0) {
+      renderer.setScissorTest(true);
+      renderer.setScissor(0, clipBottom, window.innerWidth, clipHeight);
+      renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+      renderer.render(blitScene, blitCamera);
+      renderer.setScissorTest(false);
+    }
+  } else {
     renderer.render(blitScene, blitCamera);
-    renderer.setScissorTest(false);
   }
 }
 

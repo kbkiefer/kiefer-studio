@@ -2,9 +2,9 @@ import Lenis from '@studio-freight/lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
-import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation } from './bust.js';
+import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation, setExitOffsetX, getExitOffsetX } from './bust.js';
 import { setFloatingObjectsVisible, getFloatingObjects } from './floating-objects.js';
-import { initDebugGUI, scrollConfig, modelConfig, setTimelineProgress } from './debug-gui.js';
+import { initDebugGUI, scrollConfig, modelConfig, exitConfig, setTimelineProgress, setExitProgress } from './debug-gui.js';
 import { initHeroGUI } from './hero-gui.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -23,7 +23,7 @@ function applyScrollToModel(p) {
     modelConfig.rotOffsetZ
   );
 
-  camera.position.x = modelConfig.posX;
+  camera.position.x = cfg.camStartX + getExitOffsetX();
   camera.position.y = cfg.camStartY + p * (cfg.camEndY - cfg.camStartY);
   camera.position.z = cfg.camStartZ + p * (cfg.camEndZ - cfg.camStartZ);
 }
@@ -47,7 +47,8 @@ export function initScrollAnimations() {
     initDebugGUI(
       (p) => { applyScrollToModel(p); },
       lights,
-      rebuildPixelBlit
+      rebuildPixelBlit,
+      (p) => { applyExitToModel(p); }
     );
 
     setTimeout(() => {
@@ -71,6 +72,17 @@ function initBustScroll() {
     onUpdate: (self) => {
       setTimelineProgress(self.progress);
       applyScrollToModel(self.progress);
+    },
+  });
+
+  ScrollTrigger.create({
+    trigger: '#statement',
+    start: 'top 30%',
+    end: 'bottom 50%',
+    scrub: 1,
+    onUpdate: (self) => {
+      setExitProgress(self.progress);
+      setExitOffsetX(self.progress * exitConfig.camExitX);
     },
   });
 }

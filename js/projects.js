@@ -12,12 +12,9 @@ const PROJECTS = [
   { name: 'Continuum', tags: 'macOS _ Vision _ AI Perception', color: 0x2a2a5e, desc: 'Local continuous visual perception for Apple Silicon. SigLIP + Qwen2-VL at 20 FPS.' },
 ];
 
-const SPHERE_RADIUS = 3.2;
-const CARD_W = 1.4;
-const CARD_H = 1.0;
-const COLS = 8;
-const ROWS = 6;
-const PIXEL_SIZE = 5;
+const SPHERE_RADIUS = 4;
+const COLS = 6;
+const ROWS = 4;
 
 let scene, camera, renderer;
 let sphereGroup;
@@ -25,10 +22,9 @@ let targetRotY = 0, targetRotX = 0;
 let currentRotY = 0, currentRotX = 0;
 let isDragging = false, hasDragged = false;
 let dragStartX, dragStartY;
-let lowResRT, blitScene, blitCamera, blitMesh;
 let cards = [];
 let focusNameEl = null;
-let focusEl = null;
+let snapping = false;
 
 export function initProjects() {
   const container = document.getElementById('work-grid');
@@ -43,36 +39,34 @@ export function initProjects() {
   const h = container.offsetHeight;
 
   scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x202020);
 
-  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-  camera.position.set(0, 0, 7);
+  camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+  camera.position.set(0, 0, 8);
 
-  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setSize(w, h);
-  renderer.setPixelRatio(1);
-  renderer.setClearColor(0x000000, 0);
-  renderer.autoClear = false;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-  setupPixelBlit(w, h);
-
-  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambient);
 
-  const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+  const dir = new THREE.DirectionalLight(0xffffff, 1.0);
   dir.position.set(2, 3, 5);
   scene.add(dir);
 
   sphereGroup = new THREE.Group();
   scene.add(sphereGroup);
 
-  buildCards();
   focusNameEl = document.getElementById('work-focus-name');
-  focusEl = document.querySelector('.work__focus');
+
+  buildCards();
   animate();
 
   container.addEventListener('mousedown', (e) => {
     isDragging = true;
     hasDragged = false;
+    snapping = false;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     container.style.cursor = 'grabbing';
@@ -83,21 +77,24 @@ export function initProjects() {
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-    targetRotY += dx * 0.005;
+    targetRotY += dx * 0.004;
     targetRotX -= dy * 0.003;
-    targetRotX = Math.max(-0.8, Math.min(0.8, targetRotX));
+    targetRotX = Math.max(-0.6, Math.min(0.6, targetRotX));
     dragStartX = e.clientX;
     dragStartY = e.clientY;
   });
 
   window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
     isDragging = false;
     container.style.cursor = 'grab';
+    snapToNearest();
   });
 
   container.addEventListener('touchstart', (e) => {
     isDragging = true;
     hasDragged = false;
+    snapping = false;
     dragStartX = e.touches[0].clientX;
     dragStartY = e.touches[0].clientY;
   }, { passive: true });
@@ -107,14 +104,18 @@ export function initProjects() {
     const dx = e.touches[0].clientX - dragStartX;
     const dy = e.touches[0].clientY - dragStartY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-    targetRotY += dx * 0.005;
+    targetRotY += dx * 0.004;
     targetRotX -= dy * 0.003;
-    targetRotX = Math.max(-0.8, Math.min(0.8, targetRotX));
+    targetRotX = Math.max(-0.6, Math.min(0.6, targetRotX));
     dragStartX = e.touches[0].clientX;
     dragStartY = e.touches[0].clientY;
   }, { passive: true });
 
-  window.addEventListener('touchend', () => { isDragging = false; });
+  window.addEventListener('touchend', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    snapToNearest();
+  });
 
   container.addEventListener('click', (e) => {
     if (hasDragged) return;
@@ -128,7 +129,6 @@ export function initProjects() {
     camera.aspect = w2 / h2;
     camera.updateProjectionMatrix();
     renderer.setSize(w2, h2);
-    setupPixelBlit(w2, h2);
   });
 
   modalClose.addEventListener('click', closeModal);
@@ -137,6 +137,12 @@ export function initProjects() {
 }
 
 function buildCards() {
+  const thetaStep = (Math.PI * 2) / COLS;
+  const phiStep = Math.PI / (ROWS + 1);
+
+  const cardW = 2 * SPHERE_RADIUS * Math.sin(thetaStep / 2) * 0.92;
+  const cardH = SPHERE_RADIUS * phiStep * 0.88;
+
   let pi = 0;
 
   for (let row = 0; row < ROWS; row++) {
@@ -144,33 +150,52 @@ function buildCards() {
       const project = PROJECTS[pi % PROJECTS.length];
       pi++;
 
-      const phi = ((row + 0.5) / ROWS) * Math.PI;
-      const theta = (col / COLS) * Math.PI * 2;
+      const phi = phiStep * (row + 1);
+      const theta = thetaStep * col;
 
-      const geo = new THREE.PlaneGeometry(CARD_W, CARD_H);
+      const geo = new THREE.PlaneGeometry(cardW, cardH);
       const mat = new THREE.MeshStandardMaterial({
         color: project.color,
-        roughness: 0.8,
+        roughness: 0.6,
         metalness: 0.1,
         side: THREE.DoubleSide,
       });
 
       const mesh = new THREE.Mesh(geo, mat);
-
       mesh.position.setFromSphericalCoords(SPHERE_RADIUS, phi, theta);
       mesh.lookAt(0, 0, 0);
       mesh.rotateY(Math.PI);
 
       sphereGroup.add(mesh);
-      cards.push({ mesh, project });
+      cards.push({ mesh, project, phi, theta });
     }
   }
+}
+
+function snapToNearest() {
+  const active = getActiveCard();
+  if (!active) return;
+
+  const thetaStep = (Math.PI * 2) / COLS;
+  const phiStep = Math.PI / (ROWS + 1);
+
+  const currentTheta = ((targetRotY % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const nearestCol = Math.round(currentTheta / thetaStep);
+  const snapTheta = nearestCol * thetaStep;
+
+  const nearestRow = Math.round((targetRotX + phiStep) / phiStep);
+  const snapPhi = Math.max(-0.6, Math.min(0.6, (nearestRow - 1) * phiStep * 0.3));
+
+  const diffY = snapTheta - (targetRotY % (Math.PI * 2));
+  targetRotY += diffY;
+  targetRotX = snapPhi;
+  snapping = true;
 }
 
 function getActiveCard() {
   let closest = null;
   let closestDot = -Infinity;
-  const camDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const camDir = new THREE.Vector3(0, 0, -1);
 
   for (const card of cards) {
     const cardPos = new THREE.Vector3();
@@ -182,104 +207,38 @@ function getActiveCard() {
       closest = card;
     }
   }
-
   return closest;
-}
-
-function setupPixelBlit(w, h) {
-  const lw = Math.ceil(w / PIXEL_SIZE);
-  const lh = Math.ceil(h / PIXEL_SIZE);
-
-  lowResRT = new THREE.WebGLRenderTarget(lw, lh, {
-    minFilter: THREE.NearestFilter,
-    magFilter: THREE.NearestFilter,
-    format: THREE.RGBAFormat,
-  });
-
-  const blitMat = new THREE.MeshBasicMaterial({
-    map: lowResRT.texture,
-    transparent: true,
-    depthTest: false,
-    depthWrite: false,
-  });
-
-  blitCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  blitScene = new THREE.Scene();
-  const geo = new THREE.PlaneGeometry(2, 2);
-  blitMesh = new THREE.Mesh(geo, blitMat);
-  blitScene.add(blitMesh);
-}
-
-function toScreen(vec3, cam, w, h) {
-  const v = vec3.clone().project(cam);
-  return {
-    x: (v.x * 0.5 + 0.5) * w,
-    y: (-v.y * 0.5 + 0.5) * h,
-  };
-}
-
-function updateFocusBrackets(mesh) {
-  const container = document.getElementById('work-grid');
-  const w = container.offsetWidth;
-  const h = container.offsetHeight;
-
-  const geo = mesh.geometry;
-  const posAttr = geo.attributes.position;
-
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-  for (let i = 0; i < posAttr.count; i++) {
-    const v = new THREE.Vector3().fromBufferAttribute(posAttr, i);
-    mesh.localToWorld(v);
-    const s = toScreen(v, camera, w, h);
-    if (s.x < minX) minX = s.x;
-    if (s.x > maxX) maxX = s.x;
-    if (s.y < minY) minY = s.y;
-    if (s.y > maxY) maxY = s.y;
-  }
-
-  const pad = 12;
-  focusEl.style.left = (minX - pad) + 'px';
-  focusEl.style.top = (minY - pad) + 'px';
-  focusEl.style.width = (maxX - minX + pad * 2) + 'px';
-  focusEl.style.height = (maxY - minY + pad * 2) + 'px';
-  focusEl.style.transform = 'none';
 }
 
 function animate() {
   requestAnimationFrame(animate);
 
-  currentRotY += (targetRotY - currentRotY) * 0.08;
-  currentRotX += (targetRotX - currentRotX) * 0.08;
+  const lerpSpeed = snapping ? 0.12 : 0.08;
+  currentRotY += (targetRotY - currentRotY) * lerpSpeed;
+  currentRotX += (targetRotX - currentRotX) * lerpSpeed;
 
   sphereGroup.rotation.y = currentRotY;
   sphereGroup.rotation.x = currentRotX;
 
-  if (!isDragging) {
-    targetRotY += 0.001;
+  if (!isDragging && !snapping) {
+    targetRotY += 0.0005;
   }
 
   const active = getActiveCard();
-  if (active && focusNameEl && focusEl) {
+  if (active && focusNameEl) {
     focusNameEl.textContent = active.project.name;
-    updateFocusBrackets(active.mesh);
   }
 
   for (const card of cards) {
     const worldPos = new THREE.Vector3();
     card.mesh.getWorldPosition(worldPos);
     const dot = worldPos.normalize().dot(new THREE.Vector3(0, 0, 1));
-    card.mesh.material.opacity = THREE.MathUtils.clamp(dot * 1.5 + 0.3, 0.15, 1);
-    card.mesh.material.transparent = true;
+    const brightness = THREE.MathUtils.clamp(dot * 1.5 + 0.2, 0.1, 1);
+    card.mesh.material.opacity = brightness;
+    card.mesh.material.transparent = brightness < 0.99;
   }
 
-  renderer.setRenderTarget(lowResRT);
-  renderer.clear(true, true, true);
   renderer.render(scene, camera);
-
-  renderer.setRenderTarget(null);
-  renderer.clear(true, true, true);
-  renderer.render(blitScene, blitCamera);
 }
 
 function openModal(project) {
