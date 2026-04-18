@@ -747,6 +747,7 @@ img {
 /* Desktop: hide mobile elements */
 .nav__burger { display: none; }
 .nav__mobile-menu { display: none; }
+.work__dots { display: none; }
 
 @media (max-width: 768px) {
   /* Nav: hamburger */
@@ -829,13 +830,87 @@ img {
     grid-template-columns: 1fr;
   }
 
-  /* Work grid: smaller cards */
+  /* Work: mobile horizontal scroll-snap carousel */
+  .work {
+    height: auto;
+    padding: 40px 0 32px;
+    cursor: default;
+    overflow: visible;
+    background: var(--bg-dark);
+  }
+  .work__label {
+    position: static;
+    display: block;
+    padding: 0 20px 24px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .work__hint {
+    display: none;
+  }
   .work__focus {
-    width: 260px;
-    height: 200px;
+    display: none;
+  }
+  .work__grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 16px;
+    padding: 0 24px;
+    scrollbar-width: none;
+    height: auto;
+  }
+  .work__grid::-webkit-scrollbar {
+    display: none;
+  }
+  .work__cell {
+    position: relative;
+    flex-shrink: 0;
+    width: 80vw;
+    max-width: 320px;
+    height: 240px;
+    scroll-snap-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transform: none !important;
+  }
+  .work__cell-bg {
+    filter: brightness(1) saturate(1);
+    border-radius: 8px;
+  }
+  .work__cell.is-active .work__cell-bg {
+    filter: brightness(1) saturate(1);
+  }
+  .work__cell.is-active {
+    box-shadow: none;
   }
   .work__cell-name {
-    font-size: 16px;
+    opacity: 1;
+    transform: none;
+    font-size: 18px;
+    animation: none;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  }
+  .work__cell-tags {
+    opacity: 1;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  }
+  .work__dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 20px;
+  }
+  .work__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s;
+  }
+  .work__dot.is-active {
+    background: var(--bg-yellow);
+    transform: scale(1.4);
   }
 
   /* Modal */

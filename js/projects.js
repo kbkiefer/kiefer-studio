@@ -10,17 +10,17 @@ const PROJECTS = [
   { name: 'Continuum', tags: 'macOS _ Vision _ AI', color: '#4455cc', desc: 'Local continuous visual perception for Apple Silicon. SigLIP + Qwen2-VL at 20 FPS.' },
 ];
 
-const isMobile = window.innerWidth <= 768;
-const COLS = isMobile ? 2 : 3;
-const CELL_W = isMobile ? 260 : 420;
-const CELL_H = isMobile ? 200 : 320;
-const GAP = 4;
+const IS_MOBILE = window.innerWidth <= 768;
+const COLS = IS_MOBILE ? 1 : 3;
+const CELL_W = IS_MOBILE ? Math.min(window.innerWidth - 48, 340) : 420;
+const CELL_H = IS_MOBILE ? Math.min(window.innerHeight * 0.45, 280) : 320;
+const GAP = IS_MOBILE ? 16 : 4;
 
 let offsetX = 0, offsetY = 0;
 let dragStartX, dragStartY, startOffsetX, startOffsetY;
 let isDragging = false;
 let hasDragged = false;
-let activeIndex = -1;
+let activeIndex = 0;
 
 export function initProjects() {
   const grid = document.getElementById('work-grid');
@@ -32,8 +32,13 @@ export function initProjects() {
   const totalW = COLS * (CELL_W + GAP);
   const totalH = rows * (CELL_H + GAP);
 
-  offsetX = -(totalW - grid.offsetWidth) / 2;
-  offsetY = -(totalH - grid.offsetHeight) / 2;
+  if (IS_MOBILE) {
+    offsetX = (grid.offsetWidth - CELL_W) / 2;
+    offsetY = (grid.offsetHeight - CELL_H) / 2;
+  } else {
+    offsetX = -(totalW - grid.offsetWidth) / 2;
+    offsetY = -(totalH - grid.offsetHeight) / 2;
+  }
 
   for (let i = 0; i < PROJECTS.length; i++) {
     const p = PROJECTS[i];
@@ -46,6 +51,11 @@ export function initProjects() {
       <span class="work__cell-tags">${p.tags}</span>
     `;
     grid.appendChild(cell);
+  }
+
+  if (IS_MOBILE) {
+    initMobileCarousel(grid, modal, modalClose);
+    return;
   }
 
   updateGrid(grid);
@@ -91,8 +101,12 @@ export function initProjects() {
     const dx = e.touches[0].clientX - dragStartX;
     const dy = e.touches[0].clientY - dragStartY;
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-    offsetX = startOffsetX + dx;
-    offsetY = startOffsetY + dy;
+    if (IS_MOBILE) {
+      offsetX = startOffsetX + dx;
+    } else {
+      offsetX = startOffsetX + dx;
+      offsetY = startOffsetY + dy;
+    }
     updateGrid(grid);
   }, { passive: true });
 
@@ -148,6 +162,11 @@ function updateGrid(grid) {
     activeIndex = closestIdx;
     const nameEl = document.getElementById('work-focus-name');
     if (nameEl) nameEl.textContent = PROJECTS[closestIdx].name;
+
+    if (IS_MOBILE) {
+      const dots = document.querySelectorAll('.work__dot');
+      dots.forEach((d, i) => d.classList.toggle('is-active', i === closestIdx));
+    }
   }
 }
 
@@ -160,7 +179,7 @@ function snapToCenter(grid) {
   const row = Math.floor(activeIndex / COLS);
 
   const targetX = cx - col * (CELL_W + GAP) - CELL_W / 2;
-  const targetY = cy - row * (CELL_H + GAP) - CELL_H / 2;
+  const targetY = IS_MOBILE ? (cy - CELL_H / 2) : (cy - row * (CELL_H + GAP) - CELL_H / 2);
 
   const startX = offsetX;
   const startY = offsetY;
@@ -181,6 +200,46 @@ function snapToCenter(grid) {
   }
 
   requestAnimationFrame(step);
+}
+
+function initMobileCarousel(grid, modal, modalClose) {
+  const dotsEl = document.getElementById('work-dots');
+  const cells = grid.querySelectorAll('.work__cell');
+
+  if (dotsEl) {
+    for (let i = 0; i < PROJECTS.length; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'work__dot' + (i === 0 ? ' is-active' : '');
+      dotsEl.appendChild(dot);
+    }
+  }
+
+  const updateDots = () => {
+    const scrollLeft = grid.scrollLeft;
+    const cardWidth = cells[0].offsetWidth + 16;
+    const idx = Math.round(scrollLeft / cardWidth);
+    const clamped = Math.max(0, Math.min(idx, PROJECTS.length - 1));
+
+    if (dotsEl) {
+      dotsEl.querySelectorAll('.work__dot').forEach((d, i) => {
+        d.classList.toggle('is-active', i === clamped);
+      });
+    }
+
+    activeIndex = clamped;
+  };
+
+  grid.addEventListener('scroll', updateDots, { passive: true });
+
+  cells.forEach((cell, i) => {
+    cell.addEventListener('click', () => {
+      openModal(PROJECTS[i]);
+    });
+  });
+
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 }
 
 function openModal(project) {
