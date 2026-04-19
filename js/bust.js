@@ -204,12 +204,17 @@ function animate() {
   renderer.clear(true, true, true);
   renderer.render(scene, camera);
 
-  /* 3) Blit pixelated bust ON TOP, clipped to top of screen down to bottom of blue section */
+  /* 3) Blit pixelated bust ON TOP, extends into transition zone */
   renderer.setRenderTarget(null);
   const statement = document.getElementById('statement');
   if (statement) {
     const stmtRect = statement.getBoundingClientRect();
-    const clipBottom = Math.max(0, window.innerHeight - stmtRect.bottom);
+    const pxState = window.__pixelTransitionState;
+    const tp = pxState ? pxState.progress : 0;
+    const transitionExtend = tp * window.innerHeight * 0.6;
+
+    const visibleBottom = Math.min(window.innerHeight, stmtRect.bottom + transitionExtend);
+    const clipBottom = Math.max(0, window.innerHeight - visibleBottom);
     const clipHeight = window.innerHeight - clipBottom;
     if (clipHeight > 0) {
       renderer.setScissorTest(true);

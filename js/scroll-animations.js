@@ -6,6 +6,7 @@ import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRota
 import { setFloatingObjectsVisible, getFloatingObjects } from './floating-objects.js';
 import { initDebugGUI, scrollConfig, modelConfig, exitConfig, setTimelineProgress, setExitProgress } from './debug-gui.js';
 import { initHeroGUI } from './hero-gui.js';
+import { initPixelTransition } from './pixel-transition.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,6 +47,7 @@ export function initScrollAnimations() {
   initBustScroll();
   initFloatingObjectsScroll();
   initTextReveals();
+  initPixelTransition();
 
   if (window.location.hash === '#debug') {
     initDebugGUI(
