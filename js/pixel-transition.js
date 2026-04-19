@@ -73,36 +73,31 @@ export function initPixelTransition() {
     }
   }
 
-  ScrollTrigger.create({
-    trigger: '#projects',
-    start: 'top bottom',
-    end: 'top 30%',
-    scrub: 0.3,
-    onUpdate: (self) => {
-      const p = 1 - self.progress;
-      drawEnterTransition(p);
-      window.__pixelTransitionState.progress = p;
-    },
-  });
+  window.__pixelTransitionState = { progress: 1, BLOCK, seedRandom };
 
-  ScrollTrigger.create({
-    trigger: '#projects',
-    start: 'bottom 70%',
-    end: 'bottom top',
-    scrub: 0.3,
-    onUpdate: (self) => {
-      drawExitTransition(self.progress);
-    },
-  });
+  function updateOnScroll() {
+    const projRect = workSection.getBoundingClientRect();
+    const wH = window.innerHeight;
 
-  ScrollTrigger.create({
-    trigger: '#projects',
-    start: 'top 40%',
-    end: 'top top',
-    snap: 1,
-  });
+    const enterStart = wH;
+    const enterEnd = wH * 0.3;
+    const enterRaw = (enterStart - projRect.top) / (enterStart - enterEnd);
+    const enterProgress = Math.max(0, Math.min(1, enterRaw));
+    const p = 1 - enterProgress;
+    drawEnterTransition(p);
+    window.__pixelTransitionState.progress = p;
+
+    if (p <= 0) {
+      const exitStart = wH * 0.7;
+      const exitEnd = 0;
+      const exitRaw = (exitStart - projRect.bottom) / (exitStart - exitEnd);
+      const exitProgress = Math.max(0, Math.min(1, exitRaw));
+      drawExitTransition(exitProgress);
+    }
+  }
+
+  window.addEventListener('scroll', updateOnScroll, { passive: true });
+  updateOnScroll();
 
   drawEnterTransition(1);
-
-  window.__pixelTransitionState = { progress: 1, BLOCK, seedRandom };
 }

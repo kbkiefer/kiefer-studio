@@ -204,18 +204,71 @@ function animate() {
   renderer.clear(true, true, true);
   renderer.render(scene, camera);
 
-  /* 3) Blit pixelated bust ON TOP, extends into transition zone */
+  /* 3) Blit pixelated bust ON TOP, clipped to bottom of blue section */
   renderer.setRenderTarget(null);
   const statement = document.getElementById('statement');
   if (statement) {
     const stmtRect = statement.getBoundingClientRect();
     const pxState = window.__pixelTransitionState;
     const tp = pxState ? pxState.progress : 0;
-    const transitionExtend = tp * window.innerHeight * 0.6;
+    const wH = window.innerHeight;
+    const wW = window.innerWidth;
 
-    const visibleBottom = Math.min(window.innerHeight, stmtRect.bottom + transitionExtend);
-    const clipBottom = Math.max(0, window.innerHeight - visibleBottom);
-    const clipHeight = window.innerHeight - clipBottom;
+    const clipBottom = Math.max(0, wH - stmtRect.bottom);
+    const clipHeight = wH - clipBottom;
+
+    if (clipHeight > 0) {
+      renderer.setScissorTest(true);
+      renderer.setScissor(0, clipBottom, wW, clipHeight);
+      renderer.setViewport(0, 0, wW, wH);
+      renderer.render(blitScene, blitCamera);
+      renderer.setScissorTest(false);
+    }
+
+    if (tp > 0 && tp < 1 && pxState.seedRandom) {
+      const BLOCK = pxState.BLOCK;
+      const projEl = document.getElementById('projects');
+      if (projEl) {
+        const projRect = projEl.getBoundingClientRect();
+        const cols = Math.ceil(wW / BLOCK);
+        const totalRows = Math.ceil(projRect.height / BLOCK);
+        const halfRows = totalRows / 2;
+
+        const renderTop = Math.max(0, projRect.top);
+        const renderBot = Math.min(wH, projRect.top + BLOCK * 8);
+
+        if (renderBot > renderTop) {
+          const startRow = Math.max(0, Math.floor((renderTop - projRect.top) / BLOCK));
+          const endRow = Math.min(totalRows, Math.ceil((renderBot - projRect.top) / BLOCK));
+
+          renderer.setScissorTest(true);
+          for (let row = startRow; row < endRow; row++) {
+            const distFromEdge = Math.abs(row - halfRows) / halfRows;
+            for (let col = 0; col < cols; col++) {
+              const rowThreshold = distFromEdge * 0.6 + pxState.seedRandom(col, row) * 0.4;
+              if (tp > 1 - rowThreshold) {
+                const bx = col * BLOCK;
+                const glY = wH - (projRect.top + (row + 1) * BLOCK);
+                if (glY > -BLOCK && glY < wH) {
+                  renderer.setScissor(bx, Math.max(0, glY), BLOCK, BLOCK);
+                  renderer.setViewport(0, 0, wW, wH);
+                  renderer.render(blitScene, blitCamera);
+                }
+              }
+            }
+          }
+          renderer.setScissorTest(false);
+        }
+      }
+    }
+
+    // skip old fallback
+    return;
+  }
+
+  if (false) {
+    const clipBottom = 0;
+    const clipHeight = window.innerHeight;
     if (clipHeight > 0) {
       renderer.setScissorTest(true);
       renderer.setScissor(0, clipBottom, window.innerWidth, clipHeight);
