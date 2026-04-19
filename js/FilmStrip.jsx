@@ -2,6 +2,8 @@ import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { CRTShaderMaterial, createBulgeGeometry } from './crt-shader.js';
+import GUI from 'lil-gui';
 
 const PROJECTS = [
   { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF', desc: 'Real-time audio visualization powered by Metal shaders.' },
@@ -18,7 +20,7 @@ const PROJECTS = [
 const N = PROJECTS.length;
 
 const CAM_WIDE = { pos: [2.5, 1.5, 5], lookAt: [0, 0.3, 0] };
-const CAM_SCREEN = { pos: [0, 0.65, 2.3], lookAt: [0, 0.4, 0] };
+const CAM_SCREEN = { pos: [0, 0.7, 3.2], lookAt: [0, 0.5, 0] };
 
 function makeScreenTex(project, index, state) {
   const W = 512, H = 400;
@@ -130,13 +132,37 @@ function wrapText(ctx, text, x, y, maxW, lh) {
 function ArcadeCabinet({ active, gameState, onScreenClick }) {
   const { scene } = useGLTF('/models/arcade-cabinet.glb');
   const cloned = useMemo(() => scene.clone(true), [scene]);
-  const screenRef = useRef();
   const groupRef = useRef();
-  const outlineRef = useRef();
+  const crtMatRef = useRef();
+  const crtMeshRef = useRef();
+  const screenOriginal = useRef();
+
+  const bulgeGeo = useMemo(() => createBulgeGeometry(0.46, 0.35, 32, 0.06), []);
+
+  const crtMaterial = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTexture: { value: null },
+        uTime: { value: 0 },
+        uGlow: { value: new THREE.Color(0x0044ff) },
+      },
+      vertexShader: CRTShaderMaterial.vertexShader,
+      fragmentShader: CRTShaderMaterial.fragmentShader,
+    });
+    crtMatRef.current = mat;
+    return mat;
+  }, []);
 
   useEffect(() => {
     cloned.traverse((child) => {
-      if (child.name === 'Screen') screenRef.current = child;
+      if (child.isMesh) {
+        console.log('Mesh:', child.name, 'pos:', child.position.x.toFixed(3), child.position.y.toFixed(3), child.position.z.toFixed(3));
+      }
+      if (child.name === 'Screen') {
+        child.visible = false;
+        screenOriginal.current = child;
+        console.log('Screen found! World pos after scale will be:', child.position.x * 2.5, child.position.y * 2.5, child.position.z * 2.5);
+      }
       if (child.isMesh && child.name !== 'Screen') {
         child.castShadow = true;
         child.receiveShadow = true;
@@ -145,22 +171,76 @@ function ArcadeCabinet({ active, gameState, onScreenClick }) {
   }, [cloned]);
 
   useEffect(() => {
-    if (!screenRef.current) return;
+    if (!crtMatRef.current) return;
     const p = PROJECTS[active];
     const tex = makeScreenTex(p, active, gameState);
-    screenRef.current.material = new THREE.MeshBasicMaterial({ map: tex });
+    crtMatRef.current.uniforms.uTexture.value = tex;
+    crtMatRef.current.uniforms.uGlow.value = new THREE.Color(p.color);
   }, [active, gameState]);
 
   useFrame((state) => {
     if (!groupRef.current) return;
     groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
+
+    if (crtMatRef.current) {
+      crtMatRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+    }
   });
+
+  const screenConfig = useRef({ x: -0.005, y: 0.815, z: 0.4, scaleX: 2.78, scaleY: 2.7, rotX: -0.16, rotY: 0, rotZ: 0 });
+  const guiRef = useRef(null);
+
+  useEffect(() => {
+    if (guiRef.current) return;
+    const gui = new GUI({ title: 'CRT Screen', width: 300 });
+    guiRef.current = gui;
+    const cfg = screenConfig.current;
+    const update = () => {
+      if (crtMeshRef.current) {
+        crtMeshRef.current.position.set(cfg.x, cfg.y, cfg.z);
+        crtMeshRef.current.scale.set(cfg.scaleX, cfg.scaleY, 2.5);
+        crtMeshRef.current.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ);
+      }
+    };
+    gui.add(cfg, 'x', -2, 2, 0.005).name('X').onChange(update);
+    gui.add(cfg, 'y', -2, 2, 0.005).name('Y').onChange(update);
+    gui.add(cfg, 'z', -2, 4, 0.005).name('Z').onChange(update);
+    gui.add(cfg, 'rotX', -1, 1, 0.005).name('Rot X').onChange(update);
+    gui.add(cfg, 'rotY', -1, 1, 0.005).name('Rot Y').onChange(update);
+    gui.add(cfg, 'rotZ', -1, 1, 0.005).name('Rot Z').onChange(update);
+    gui.add(cfg, 'scaleX', 0.5, 5, 0.01).name('Scale W').onChange(update);
+    gui.add(cfg, 'scaleY', 0.5, 5, 0.01).name('Scale H').onChange(update);
+    gui.add({ copy: () => {
+      const out = { x: cfg.x, y: cfg.y, z: cfg.z, rotX: cfg.rotX, rotY: cfg.rotY, rotZ: cfg.rotZ, scaleX: cfg.scaleX, scaleY: cfg.scaleY };
+      navigator.clipboard.writeText(JSON.stringify(out, null, 2));
+      console.log('Screen config:', out);
+    }}, 'copy').name('Copy Config');
+    return () => { gui.destroy(); guiRef.current = null; };
+  }, []);
 
   return (
     <group ref={groupRef} onClick={onScreenClick}>
       <primitive object={cloned} scale={2.5} />
 
-      {/* Borderlands outline: inverted hull */}
+      {/* CRT bulge screen */}
+      <mesh
+        ref={crtMeshRef}
+        geometry={bulgeGeo}
+        material={crtMaterial}
+        position={[screenConfig.current.x, screenConfig.current.y, screenConfig.current.z]}
+        rotation={[screenConfig.current.rotX, screenConfig.current.rotY, screenConfig.current.rotZ]}
+        scale={[screenConfig.current.scaleX, screenConfig.current.scaleY, 2.5]}
+      />
+
+      {/* Screen glow halo */}
+      <pointLight
+        position={[-0.024, 0.75, 1.9]}
+        intensity={0.8}
+        color={gameState === 'playing' ? PROJECTS[active].color : '#0044ff'}
+        distance={2}
+      />
+
+      {/* Borderlands outline */}
       <group scale={2.55}>
         {cloned.children.filter(c => c.isMesh && c.name !== 'Screen').map((child, i) => (
           <mesh key={i} geometry={child.geometry} position={child.position} rotation={child.rotation} scale={child.scale}>
