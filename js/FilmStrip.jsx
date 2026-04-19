@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { CRTShaderMaterial, createBulgeGeometry } from './crt-shader.js';
-import GUI from 'lil-gui';
 
 const PROJECTS = [
   { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF', desc: 'Real-time audio visualization powered by Metal shaders.' },
@@ -129,13 +128,101 @@ function wrapText(ctx, text, x, y, maxW, lh) {
   ctx.fillText(line, x, y);
 }
 
-function ArcadeCabinet({ active, gameState, onScreenClick }) {
+function ArcadeButton({ position, color, emissiveColor, onClick, label }) {
+  const ref = useRef();
+  const [pressed, setPressed] = useState(false);
+  const [lit, setLit] = useState(false);
+
+  useFrame(() => {
+    if (!ref.current) return;
+    const targetY = pressed ? -0.02 : 0;
+    ref.current.position.y += (targetY - ref.current.position.y) * 0.3;
+  });
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setPressed(true);
+    setLit(true);
+    setTimeout(() => setPressed(false), 150);
+    setTimeout(() => setLit(false), 400);
+    if (onClick) onClick();
+  };
+
+  return (
+    <group position={position}>
+      {/* Button base */}
+      <mesh position={[0, -0.02, 0]}>
+        <cylinderGeometry args={[0.055, 0.055, 0.02, 16]} />
+        <meshStandardMaterial color="#111111" roughness={0.9} />
+      </mesh>
+      {/* Button top */}
+      <mesh ref={ref} onClick={handleClick} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = ''}>
+        <cylinderGeometry args={[0.05, 0.05, 0.03, 16]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={lit ? emissiveColor : '#000000'}
+          emissiveIntensity={lit ? 2 : 0}
+          roughness={0.3}
+          metalness={0.2}
+        />
+      </mesh>
+      {/* Glow light when pressed */}
+      {lit && (
+        <pointLight position={[0, 0.05, 0]} intensity={1.5} color={emissiveColor} distance={0.5} />
+      )}
+    </group>
+  );
+}
+
+function ArcadeJoystick({ position, onMove }) {
+  const stickRef = useRef();
+  const ballRef = useRef();
+  const [tiltX, setTiltX] = useState(0);
+  const [tiltZ, setTiltZ] = useState(0);
+
+  useFrame(() => {
+    if (!stickRef.current) return;
+    stickRef.current.rotation.x += (tiltZ * 0.3 - stickRef.current.rotation.x) * 0.15;
+    stickRef.current.rotation.z += (-tiltX * 0.3 - stickRef.current.rotation.z) * 0.15;
+  });
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setTiltX((Math.random() - 0.5) * 2);
+    setTiltZ((Math.random() - 0.5) * 2);
+    setTimeout(() => { setTiltX(0); setTiltZ(0); }, 300);
+    if (onMove) onMove();
+  };
+
+  return (
+    <group position={position}>
+      {/* Base */}
+      <mesh>
+        <cylinderGeometry args={[0.04, 0.05, 0.02, 16]} />
+        <meshStandardMaterial color="#222222" roughness={0.8} />
+      </mesh>
+      {/* Stick */}
+      <group ref={stickRef}>
+        <mesh position={[0, 0.07, 0]} onClick={handleClick} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = ''}>
+          <cylinderGeometry args={[0.015, 0.015, 0.12, 8]} />
+          <meshStandardMaterial color="#333333" roughness={0.7} metalness={0.3} />
+        </mesh>
+        {/* Ball top */}
+        <mesh ref={ballRef} position={[0, 0.14, 0]}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+          <meshStandardMaterial color="#cc2222" roughness={0.2} metalness={0.5} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
+function ArcadeCabinet({ active, gameState, onScreenClick, setActive }) {
   const { scene } = useGLTF('/models/arcade-cabinet-v3.glb');
   const cloned = useMemo(() => scene.clone(true), [scene]);
   const groupRef = useRef();
   const crtMatRef = useRef();
   const crtMeshRef = useRef();
-  const screenOriginal = useRef();
 
   const bulgeGeo = useMemo(() => createBulgeGeometry(0.52, 0.42, 32, 0.07), []);
 
@@ -180,62 +267,66 @@ function ArcadeCabinet({ active, gameState, onScreenClick }) {
     }
   });
 
-  const screenConfig = useRef({ x: -0.005, y: 0.815, z: 0.38, scaleX: 3.15, scaleY: 2.94, rotX: -0.22, rotY: 0, rotZ: 0 });
-  const guiRef = useRef(null);
-
-  useEffect(() => {
-    if (guiRef.current) return;
-    const gui = new GUI({ title: 'CRT Screen', width: 300 });
-    guiRef.current = gui;
-    const cfg = screenConfig.current;
-    const update = () => {
-      if (crtMeshRef.current) {
-        crtMeshRef.current.position.set(cfg.x, cfg.y, cfg.z);
-        crtMeshRef.current.scale.set(cfg.scaleX, cfg.scaleY, 2.5);
-        crtMeshRef.current.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ);
-      }
-    };
-    gui.add(cfg, 'x', -2, 2, 0.005).name('X').onChange(update);
-    gui.add(cfg, 'y', -2, 2, 0.005).name('Y').onChange(update);
-    gui.add(cfg, 'z', -2, 4, 0.005).name('Z').onChange(update);
-    gui.add(cfg, 'rotX', -1, 1, 0.005).name('Rot X').onChange(update);
-    gui.add(cfg, 'rotY', -1, 1, 0.005).name('Rot Y').onChange(update);
-    gui.add(cfg, 'rotZ', -1, 1, 0.005).name('Rot Z').onChange(update);
-    gui.add(cfg, 'scaleX', 0.5, 5, 0.01).name('Scale W').onChange(update);
-    gui.add(cfg, 'scaleY', 0.5, 5, 0.01).name('Scale H').onChange(update);
-    gui.add({ copy: () => {
-      const out = { x: cfg.x, y: cfg.y, z: cfg.z, rotX: cfg.rotX, rotY: cfg.rotY, rotZ: cfg.rotZ, scaleX: cfg.scaleX, scaleY: cfg.scaleY };
-      navigator.clipboard.writeText(JSON.stringify(out, null, 2));
-      console.log('Screen config:', out);
-    }}, 'copy').name('Copy Config');
-    return () => { gui.destroy(); guiRef.current = null; };
-  }, []);
+  const sc = { x: -0.005, y: 0.815, z: 0.38, scaleX: 3.15, scaleY: 2.94, rotX: -0.22, rotY: 0, rotZ: 0 };
+  const projColor = PROJECTS[active]?.color || '#0044ff';
 
   return (
     <group ref={groupRef} onClick={onScreenClick}>
-      <primitive object={cloned} scale={2.5} />
+      <primitive object={cloned} scale={S} />
 
       {/* CRT bulge screen */}
       <mesh
         ref={crtMeshRef}
         geometry={bulgeGeo}
         material={crtMaterial}
-        position={[screenConfig.current.x, screenConfig.current.y, screenConfig.current.z]}
-        rotation={[screenConfig.current.rotX, screenConfig.current.rotY, screenConfig.current.rotZ]}
-        scale={[screenConfig.current.scaleX, screenConfig.current.scaleY, 2.5]}
+        position={[sc.x, sc.y, sc.z]}
+        rotation={[sc.rotX, sc.rotY, sc.rotZ]}
+        scale={[sc.scaleX, sc.scaleY, S]}
       />
 
-      {/* Screen glow halo */}
+      {/* Screen glow */}
       <pointLight
-        position={[-0.024, 0.75, 1.9]}
-        intensity={0.8}
-        color={gameState === 'playing' ? PROJECTS[active].color : '#0044ff'}
-        distance={2}
+        position={[0, 0.8, 1.8]}
+        intensity={1.2}
+        color={gameState === 'playing' ? projColor : '#0044ff'}
+        distance={3}
+      />
+
+      {/* Interactive buttons */}
+      <ArcadeButton
+        position={[0.15 * S, -0.32 * S, 0.52 * S]}
+        color="#cc2222"
+        emissiveColor="#ff4444"
+        onClick={() => { if (gameState === 'playing') setActive(prev => (prev + 1) % N); }}
+      />
+      <ArcadeButton
+        position={[0.25 * S, -0.32 * S, 0.50 * S]}
+        color="#cc2222"
+        emissiveColor="#ff4444"
+        onClick={() => { if (gameState === 'playing') setActive(prev => (prev - 1 + N) % N); }}
+      />
+      <ArcadeButton
+        position={[0.35 * S, -0.32 * S, 0.48 * S]}
+        color="#cc2222"
+        emissiveColor="#ff4444"
+        onClick={() => { if (gameState === 'start') onScreenClick(); }}
+      />
+      <ArcadeButton
+        position={[0.45 * S, -0.34 * S, 0.46 * S]}
+        color="#ccaa22"
+        emissiveColor="#ffff44"
+        onClick={() => { if (gameState === 'playing') onScreenClick(); }}
+      />
+
+      {/* Interactive joystick */}
+      <ArcadeJoystick
+        position={[-0.20 * S, -0.28 * S, 0.52 * S]}
+        onMove={() => { if (gameState === 'playing') setActive(prev => (prev + 1) % N); }}
       />
 
       {/* Borderlands outline */}
-      <group scale={2.55}>
-        {cloned.children.filter(c => c.isMesh && c.name !== 'Screen').map((child, i) => (
+      <group scale={S * 1.02}>
+        {cloned.children.filter(c => c.isMesh).map((child, i) => (
           <mesh key={i} geometry={child.geometry} position={child.position} rotation={child.rotation} scale={child.scale}>
             <meshBasicMaterial color="#000000" side={THREE.BackSide} />
           </mesh>
@@ -362,6 +453,7 @@ function SceneContent({ active, setActive, gameState, setGameState, onOpen, coin
       <Suspense fallback={null}>
         <ArcadeCabinet
           active={active}
+          setActive={setActive}
           gameState={gameState}
           onScreenClick={() => {
             if (gameState === 'start') setGameState('coin');
