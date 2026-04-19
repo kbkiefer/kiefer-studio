@@ -1,280 +1,397 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 
 const PROJECTS = [
-  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF' },
-  { name: 'Imago', tags: 'iOS _ AI _ ADHD', tech: 'iOS', color: '#22cc55' },
-  { name: 'Border Child', tags: 'Web _ R3F _ Film', tech: 'Web', color: '#cc8822' },
-  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading', tech: 'macOS', color: '#2299cc' },
-  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', tech: 'iOS', color: '#8822cc' },
-  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', tech: 'iOS', color: '#cc2244' },
-  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', tech: 'Unity', color: '#ccaa22' },
-  { name: 'ShalaMakes', tags: 'Web _ 3D Print _ Store', tech: 'Web', color: '#22ccaa' },
-  { name: 'Continuum', tags: 'macOS _ Vision _ AI', tech: 'macOS', color: '#4455cc' },
+  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF', desc: 'Real-time audio visualization powered by Metal shaders.' },
+  { name: 'Imago', tags: 'iOS _ AI _ ADHD', tech: 'iOS', color: '#22cc55', desc: 'An ADHD companion app using on-device AI.' },
+  { name: 'Border Child', tags: 'Web _ R3F _ Film', tech: 'Web', color: '#cc8822', desc: 'Cinematic scroll-driven website for a Laredo creative studio.' },
+  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading', tech: 'macOS', color: '#2299cc', desc: 'Sovereign trading terminal for macOS with Liquid Glass.' },
+  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', tech: 'iOS', color: '#8822cc', desc: 'Cymatics, audio entrainment, and Watch HR instrument.' },
+  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', tech: 'iOS', color: '#cc2244', desc: 'ADHD neural map task manager with AI categorization.' },
+  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', tech: 'Unity', color: '#ccaa22', desc: '3D transformation game. Caterpillar to butterfly.' },
+  { name: 'ShalaMakes', tags: 'Web _ 3D Print _ Store', tech: 'Web', color: '#22ccaa', desc: 'E-commerce for custom 3D printed products.' },
+  { name: 'Continuum', tags: 'macOS _ Vision _ AI', tech: 'macOS', color: '#4455cc', desc: 'Local visual perception for Apple Silicon at 20 FPS.' },
 ];
 
 const N = PROJECTS.length;
-const R = 5.5;
-const ANGLE_STEP = (Math.PI * 2) / (N + 2);
-const CARD_W = 2.6;
-const CARD_H = 1.8;
 
-function FrameCard({ project, index, angle, isActive, onClick }) {
-  const ref = useRef();
-  const borderRef = useRef();
+const CAM_WIDE = { pos: [2.5, 1.5, 5], lookAt: [0, 0.3, 0] };
+const CAM_SCREEN = { pos: [0, 0.65, 2.3], lookAt: [0, 0.4, 0] };
 
-  const texture = useMemo(() => {
-    const W = 520, H = 360;
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const ctx = c.getContext('2d');
+function makeScreenTex(project, index, state) {
+  const W = 512, H = 400;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let y = 0; y < H; y += 2) {
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(0, y, W, 1);
+  }
+
+  if (state === 'start') {
+    ctx.fillStyle = '#012FFF';
+    ctx.globalAlpha = 0.08;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = '#FFFF62';
+    ctx.font = 'bold 42px "Silkscreen", monospace';
+    const title = 'KIEFER';
+    const tm = ctx.measureText(title);
+    ctx.fillText(title, (W - tm.width) / 2, H / 2 - 40);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '12px "Silkscreen", monospace';
+    const sub = 'PORTFOLIO ARCADE';
+    const sm = ctx.measureText(sub);
+    ctx.fillText(sub, (W - sm.width) / 2, H / 2 - 10);
+
+    ctx.fillStyle = '#FFFF62';
+    ctx.font = 'bold 16px "Silkscreen", monospace';
+    const insert = '> INSERT COIN <';
+    const im = ctx.measureText(insert);
+    ctx.fillText(insert, (W - im.width) / 2, H / 2 + 40);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    const hint = 'PRESS ENTER OR CLICK';
+    const hm = ctx.measureText(hint);
+    ctx.fillText(hint, (W - hm.width) / 2, H - 30);
+  } else {
+    ctx.fillStyle = project.color;
+    ctx.globalAlpha = 0.1;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = project.color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(8, 8, W - 16, H - 16);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillText(`${String(index + 1).padStart(2, '0')}/${N}`, 14, 22);
+    ctx.textAlign = 'right';
+    ctx.fillText(project.tech, W - 14, 22);
+    ctx.textAlign = 'left';
 
     ctx.fillStyle = project.color;
-    ctx.fillRect(0, 0, W, H);
+    ctx.font = 'bold 34px "Silkscreen", monospace';
+    const name = project.name.toUpperCase();
+    const nm = ctx.measureText(name);
+    ctx.fillText(name, (W - nm.width) / 2, H / 2 - 20);
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-    ctx.lineWidth = 6;
-    ctx.strokeRect(3, 3, W - 6, H - 6);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.font = '12px "JetBrains Mono", monospace';
+    const tags = project.tags;
+    const tgm = ctx.measureText(tags);
+    ctx.fillText(tags, (W - tgm.width) / 2, H / 2 + 8);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = 'bold 14px "JetBrains Mono", monospace';
-    ctx.fillText('PROJECT:', 18, 28);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = '11px "Space Grotesk", sans-serif';
+    wrapText(ctx, project.desc, 20, H / 2 + 36, W - 40, 16);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.font = 'bold 46px "Silkscreen", monospace';
-    ctx.fillText(project.name.toUpperCase(), 22, H / 2 + 10);
-    ctx.fillStyle = '#F0ECE4';
-    ctx.fillText(project.name.toUpperCase(), 18, H / 2 + 6);
+    ctx.fillStyle = '#FFFF62';
+    ctx.font = 'bold 11px "Silkscreen", monospace';
+    const view = 'ENTER: VIEW PROJECT';
+    const vm = ctx.measureText(view);
+    ctx.fillText(view, (W - vm.width) / 2, H - 20);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = '13px "JetBrains Mono", monospace';
-    ctx.fillText(project.tags, 18, H / 2 + 36);
-
-    for (let i = 0; i < 5; i++) {
-      ctx.strokeStyle = `rgba(0,0,0,${0.02 + Math.random() * 0.04})`;
-      ctx.lineWidth = 0.5;
-      ctx.beginPath();
-      ctx.moveTo(Math.random() * W, 0);
-      ctx.lineTo(Math.random() * W, H);
-      ctx.stroke();
-    }
-
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  }, [project]);
-
-  const x = Math.sin(angle) * R;
-  const z = -Math.cos(angle) * R;
-
-  return (
-    <group position={[x, 0, z]} rotation={[0, Math.PI + angle, 0]}>
-      <mesh ref={borderRef}>
-        <planeGeometry args={[CARD_W + 0.45, CARD_H + 0.55]} />
-        <meshStandardMaterial color="#0e0e0e" roughness={0.9} side={THREE.DoubleSide} />
-      </mesh>
-
-      <mesh ref={ref} position={[0, 0, 0.01]} onClick={onClick}>
-        <planeGeometry args={[CARD_W, CARD_H]} />
-        <meshStandardMaterial map={texture} roughness={0.35} side={THREE.DoubleSide} />
-      </mesh>
-
-      <SprocketRow y={(CARD_H + 0.55) / 2 - 0.1} width={CARD_W + 0.45} />
-      <SprocketRow y={-(CARD_H + 0.55) / 2 + 0.1} width={CARD_W + 0.45} />
-    </group>
-  );
-}
-
-function SprocketRow({ y, width }) {
-  const holes = [];
-  const count = 7;
-  const start = -width / 2 + 0.25;
-  const step = (width - 0.5) / (count - 1);
-  for (let i = 0; i < count; i++) {
-    holes.push(
-      <mesh key={i} position={[start + i * step, y, 0.02]}>
-        <planeGeometry args={[0.12, 0.14]} />
-        <meshBasicMaterial color="#0b0b1e" />
-      </mesh>
-    );
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '9px "Silkscreen", monospace';
+    ctx.fillText('<  PREV', 14, H - 20);
+    ctx.textAlign = 'right';
+    ctx.fillText('NEXT  >', W - 14, H - 20);
+    ctx.textAlign = 'left';
   }
-  return <>{holes}</>;
+
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
-function Reel({ active, setActive, onOpenProject }) {
-  const reelRef = useRef();
-  const targetRot = useRef(0);
+function wrapText(ctx, text, x, y, maxW, lh) {
+  const words = text.split(' ');
+  let line = '';
+  for (const w of words) {
+    const test = line + w + ' ';
+    if (ctx.measureText(test).width > maxW && line) { ctx.fillText(line, x, y); line = w + ' '; y += lh; }
+    else line = test;
+    if (y > 370) return;
+  }
+  ctx.fillText(line, x, y);
+}
 
-  useFrame(() => {
-    if (!reelRef.current) return;
-    targetRot.current = active * ANGLE_STEP;
-    reelRef.current.rotation.y += (-targetRot.current - reelRef.current.rotation.y) * 0.06;
+function ArcadeCabinet({ active, gameState, onScreenClick }) {
+  const { scene } = useGLTF('/models/arcade-cabinet.glb');
+  const cloned = useMemo(() => scene.clone(true), [scene]);
+  const screenRef = useRef();
+  const groupRef = useRef();
+  const outlineRef = useRef();
+
+  useEffect(() => {
+    cloned.traverse((child) => {
+      if (child.name === 'Screen') screenRef.current = child;
+      if (child.isMesh && child.name !== 'Screen') {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [cloned]);
+
+  useEffect(() => {
+    if (!screenRef.current) return;
+    const p = PROJECTS[active];
+    const tex = makeScreenTex(p, active, gameState);
+    screenRef.current.material = new THREE.MeshBasicMaterial({ map: tex });
+  }, [active, gameState]);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.02;
   });
 
   return (
-    <group ref={reelRef}>
-      {PROJECTS.map((p, i) => (
-        <FrameCard
-          key={i}
-          project={p}
-          index={i}
-          angle={i * ANGLE_STEP}
-          isActive={i === active}
-          onClick={() => {
-            if (i === active) onOpenProject(p);
-            else setActive(i);
-          }}
-        />
-      ))}
+    <group ref={groupRef} onClick={onScreenClick}>
+      <primitive object={cloned} scale={2.5} />
+
+      {/* Borderlands outline: inverted hull */}
+      <group scale={2.55}>
+        {cloned.children.filter(c => c.isMesh && c.name !== 'Screen').map((child, i) => (
+          <mesh key={i} geometry={child.geometry} position={child.position} rotation={child.rotation} scale={child.scale}>
+            <meshBasicMaterial color="#000000" side={THREE.BackSide} />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
 
-function Scene({ active, setActive, onOpenProject }) {
-  const { gl, camera } = useThree();
+function CameraRig({ gameState }) {
+  const { camera } = useThree();
+  const progressRef = useRef(0);
 
-  React.useEffect(() => {
-    camera.lookAt(0, 0, -R);
-  }, [camera]);
+  useFrame(() => {
+    const target = gameState === 'start' ? 0 : 1;
+    progressRef.current += (target - progressRef.current) * 0.025;
+    const t = progressRef.current;
 
-  React.useEffect(() => {
-    const el = gl.domElement;
-    let wAcc = 0;
+    const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-    const onWheel = (e) => {
-      e.preventDefault();
-      wAcc += e.deltaY;
-      const s = Math.sign(wAcc) * Math.floor(Math.abs(wAcc) / 50);
-      if (s) {
-        wAcc -= s * 50;
-        setActive((prev) => ((prev + s) % N + N) % N);
-      }
-    };
+    const px = CAM_WIDE.pos[0] + (CAM_SCREEN.pos[0] - CAM_WIDE.pos[0]) * eased;
+    const py = CAM_WIDE.pos[1] + (CAM_SCREEN.pos[1] - CAM_WIDE.pos[1]) * eased;
+    const pz = CAM_WIDE.pos[2] + (CAM_SCREEN.pos[2] - CAM_WIDE.pos[2]) * eased;
 
-    let tx = null;
-    const onTouchStart = (e) => { tx = e.touches[0].clientX; };
-    const onTouchMove = (e) => {
-      if (tx == null) return;
-      const d = e.touches[0].clientX - tx;
-      if (Math.abs(d) > 35) {
-        setActive((prev) => ((prev + (d > 0 ? -1 : 1)) % N + N) % N);
-        tx = e.touches[0].clientX;
-      }
-    };
-    const onTouchEnd = () => { tx = null; };
+    camera.position.set(px, py, pz);
 
-    const onKey = (e) => {
-      if (e.key === 'ArrowRight') { setActive((prev) => (prev + 1) % N); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { setActive((prev) => ((prev - 1) + N) % N); e.preventDefault(); }
-    };
+    const lx = CAM_WIDE.lookAt[0] + (CAM_SCREEN.lookAt[0] - CAM_WIDE.lookAt[0]) * eased;
+    const ly = CAM_WIDE.lookAt[1] + (CAM_SCREEN.lookAt[1] - CAM_WIDE.lookAt[1]) * eased;
+    const lz = CAM_WIDE.lookAt[2] + (CAM_SCREEN.lookAt[2] - CAM_WIDE.lookAt[2]) * eased;
+    camera.lookAt(lx, ly, lz);
+  });
 
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('touchstart', onTouchStart, { passive: true });
-    el.addEventListener('touchmove', onTouchMove, { passive: true });
-    el.addEventListener('touchend', onTouchEnd);
-    window.addEventListener('keydown', onKey);
+  return null;
+}
 
-    return () => {
-      el.removeEventListener('wheel', onWheel);
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [gl, setActive]);
-
+function SceneContent({ active, setActive, gameState, setGameState, onOpen }) {
   return (
     <>
-      <ambientLight intensity={0.35} color="#6666aa" />
+      <ambientLight intensity={0.15} color="#6666aa" />
+
       <spotLight
-        position={[0, 7, 3]}
+        position={[0, 5, 4]}
         angle={0.5}
-        penumbra={0.7}
-        intensity={8}
-        target-position={[0, 0, -R]}
-        castShadow={false}
+        penumbra={0.6}
+        intensity={6}
+        castShadow
+        shadow-mapSize={[512, 512]}
       />
-      <pointLight position={[0, -3, -1]} intensity={2} color="#3344aa" distance={12} />
-      <fog attach="fog" args={['#0b0b1e', 6, 18]} />
-      <mesh position={[0, 0, -3]}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="red" />
+
+      <spotLight
+        position={[-3, 3, 2]}
+        angle={0.8}
+        penumbra={0.8}
+        intensity={2}
+        color="#4466ff"
+      />
+
+      <spotLight
+        position={[3, 3, 2]}
+        angle={0.8}
+        penumbra={0.8}
+        intensity={2}
+        color="#ff4466"
+      />
+
+      <pointLight
+        position={[0, -1, 2]}
+        intensity={2}
+        color={gameState === 'playing' ? PROJECTS[active].color : '#4444ff'}
+        distance={5}
+      />
+
+      <CameraRig gameState={gameState} />
+
+      <Suspense fallback={null}>
+        <ArcadeCabinet
+          active={active}
+          gameState={gameState}
+          onScreenClick={() => {
+            if (gameState === 'start') setGameState('playing');
+            else if (gameState === 'playing') onOpen(PROJECTS[active]);
+          }}
+        />
+      </Suspense>
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.4, 0]} receiveShadow>
+        <planeGeometry args={[30, 30]} />
+        <meshStandardMaterial color="#08080f" roughness={0.92} metalness={0.1} />
       </mesh>
-      <Reel active={active} setActive={setActive} onOpenProject={onOpenProject} />
+
+      <mesh rotation={[0, 0, 0]} position={[0, 2, -4]}>
+        <planeGeometry args={[30, 12]} />
+        <meshStandardMaterial color="#0a0a14" roughness={1} />
+      </mesh>
     </>
   );
 }
 
-export default function FilmStripPortfolio() {
+export default function ArcadePortfolio() {
   const [active, setActive] = useState(0);
+  const [gameState, setGameState] = useState('start');
+  const containerRef = useRef();
   const p = PROJECTS[active];
 
   const openModal = (project) => {
     const modal = document.getElementById('work-modal');
+    if (!modal) return;
     document.getElementById('work-modal-hero').style.background = project.color;
     document.getElementById('work-modal-title').textContent = project.name;
     document.getElementById('work-modal-tags').textContent = project.tags;
-    document.getElementById('work-modal-body').innerHTML = `<p>${project.tags}</p>`;
+    document.getElementById('work-modal-body').innerHTML = `<p>${project.desc}</p>`;
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   };
 
+  useEffect(() => {
+    const onKey = (e) => {
+      if (gameState === 'start') {
+        if (e.key === 'Enter' || e.key === ' ') { setGameState('playing'); e.preventDefault(); }
+        return;
+      }
+      if (e.key === 'ArrowRight') { setActive(prev => (prev + 1) % N); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { setActive(prev => (prev - 1 + N) % N); e.preventDefault(); }
+      if (e.key === 'Enter' || e.key === ' ') { openModal(PROJECTS[active]); e.preventDefault(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [active, gameState]);
+
+  const onWheel = (e) => {
+    if (gameState !== 'playing') return;
+    if (Math.abs(e.deltaY) > 30) {
+      setActive(prev => ((prev + Math.sign(e.deltaY)) % N + N) % N);
+    }
+  };
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} onWheel={onWheel}>
       <Canvas
-        camera={{ position: [0, 0.8, 0], fov: 55, near: 0.1, far: 100 }}
-        style={{ width: '100%', height: '100%', background: '#0b0b1e' }}
-        gl={{ antialias: true, outputColorSpace: THREE.SRGBColorSpace }}
-        resize={{ scroll: false }}
+        camera={{ position: CAM_WIDE.pos, fov: 45 }}
+        shadows
+        style={{ width: '100%', height: '100%' }}
+        gl={{ antialias: true }}
       >
-        <Scene active={active} setActive={setActive} onOpenProject={openModal} />
+        <color attach="background" args={['#08080f']} />
+        <fog attach="fog" args={['#08080f', 6, 18]} />
+        <SceneContent
+          active={active}
+          setActive={setActive}
+          gameState={gameState}
+          setGameState={setGameState}
+          onOpen={openModal}
+        />
       </Canvas>
 
+      {/* HUD */}
       <div style={{
-        position: 'absolute', top: 16, left: 20, right: 20,
+        position: 'absolute', top: 14, left: 18, right: 18,
         display: 'flex', justifyContent: 'space-between',
         pointerEvents: 'none', zIndex: 5,
       }}>
-        <span style={{
-          fontFamily: '"Silkscreen", monospace', fontSize: 12,
-          letterSpacing: 2, textTransform: 'uppercase', color: '#FFFF62',
-        }}>Selected Work</span>
-        <span style={{
-          fontFamily: '"JetBrains Mono", monospace', fontSize: 11,
-          letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.5)',
-        }}>Scroll / Swipe / Arrows</span>
+        <span style={{ fontFamily: '"Silkscreen", monospace', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: '#FFFF62' }}>
+          {gameState === 'start' ? 'Scroll to Approach' : 'Insert Coin'}
+        </span>
+        <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.35)' }}>
+          {gameState === 'start' ? 'Scroll Down' : 'Arrows: Browse · Enter: View'}
+        </span>
       </div>
 
-      <div style={{
-        position: 'absolute', bottom: 24, left: 20, right: 20,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-        pointerEvents: 'none', zIndex: 5,
-      }}>
-        <div>
-          <div style={{
-            fontFamily: '"JetBrains Mono", monospace', fontSize: 11,
-            letterSpacing: 2, textTransform: 'uppercase',
-            color: 'rgba(240,236,228,0.5)', marginBottom: 6,
-          }}>
-            {String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}
+      {gameState === 'playing' && (
+        <div style={{
+          position: 'absolute', bottom: 20, left: 18, right: 18,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          pointerEvents: 'none', zIndex: 5,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2,
+              textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4,
+            }}>
+              {String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}
+            </div>
+            <div style={{
+              fontFamily: '"Silkscreen", monospace', fontSize: 26, letterSpacing: 2,
+              color: p.color, textShadow: `0 0 20px ${p.color}44`,
+            }}>{p.name}</div>
           </div>
-          <div style={{
-            fontFamily: '"Silkscreen", monospace', fontSize: 28,
-            letterSpacing: 2, color: p.color,
-            textShadow: '0 0 20px rgba(255,255,255,0.2), 2px 2px 0 rgba(0,0,0,0.6)',
-          }}>{p.name}</div>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
+            {PROJECTS.map((_, i) => (
+              <div key={i} style={{
+                width: i === active ? 18 : 4, height: 4,
+                background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)',
+                transition: 'width 0.3s',
+              }} />
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
-          {PROJECTS.map((_, i) => (
-            <div key={i} style={{
-              width: i === active ? 18 : 4, height: 4,
-              background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.25)',
-              transition: 'width 0.3s',
-            }} />
-          ))}
-        </div>
-      </div>
+      )}
+
+      {/* Touch nav buttons (visible when playing) */}
+      {gameState === 'playing' && (
+        <>
+          <button onClick={() => setActive(prev => (prev - 1 + N) % N)} style={{
+            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+            color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5,
+            fontFamily: '"Silkscreen", monospace',
+          }}>&lt;</button>
+          <button onClick={() => setActive(prev => (prev + 1) % N)} style={{
+            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+            color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5,
+            fontFamily: '"Silkscreen", monospace',
+          }}>&gt;</button>
+        </>
+      )}
+
+      {gameState === 'start' && (
+        <button onClick={() => setGameState('playing')} style={{
+          position: 'absolute', bottom: '20%', left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(255,255,62,0.1)', border: '2px solid #FFFF62',
+          color: '#FFFF62', fontSize: 16, padding: '14px 40px', cursor: 'pointer', zIndex: 5,
+          fontFamily: '"Silkscreen", monospace', letterSpacing: 4, textTransform: 'uppercase',
+          animation: 'blink 1.2s infinite',
+          boxShadow: '0 0 30px rgba(255,255,62,0.15)',
+        }}>Insert Coin</button>
+      )}
+
+      <style>{`@keyframes blink { 0%,60% { opacity: 1; } 61%,100% { opacity: 0.3; } }`}</style>
     </div>
   );
 }

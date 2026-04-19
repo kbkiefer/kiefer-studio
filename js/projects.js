@@ -1,13 +1,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import FilmStripPortfolio from './FilmStrip.jsx';
+import ArcadePortfolio from './FilmStrip.jsx';
 
 export function initProjects() {
   const container = document.getElementById('work-grid');
   if (!container) return;
 
   const root = createRoot(container);
-  root.render(React.createElement(FilmStripPortfolio));
+  root.render(React.createElement(ArcadePortfolio));
 
   const closeBtn = document.getElementById('work-modal-close');
   const modal = document.getElementById('work-modal');
