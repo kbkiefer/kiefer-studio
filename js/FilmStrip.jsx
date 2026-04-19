@@ -130,14 +130,14 @@ function wrapText(ctx, text, x, y, maxW, lh) {
 }
 
 function ArcadeCabinet({ active, gameState, onScreenClick }) {
-  const { scene } = useGLTF('/models/arcade-cabinet.glb');
+  const { scene } = useGLTF('/models/arcade-cabinet-v3.glb');
   const cloned = useMemo(() => scene.clone(true), [scene]);
   const groupRef = useRef();
   const crtMatRef = useRef();
   const crtMeshRef = useRef();
   const screenOriginal = useRef();
 
-  const bulgeGeo = useMemo(() => createBulgeGeometry(0.46, 0.35, 32, 0.06), []);
+  const bulgeGeo = useMemo(() => createBulgeGeometry(0.52, 0.42, 32, 0.07), []);
 
   const crtMaterial = useMemo(() => {
     const mat = new THREE.ShaderMaterial({
@@ -148,6 +148,7 @@ function ArcadeCabinet({ active, gameState, onScreenClick }) {
       },
       vertexShader: CRTShaderMaterial.vertexShader,
       fragmentShader: CRTShaderMaterial.fragmentShader,
+      depthWrite: true,
     });
     crtMatRef.current = mat;
     return mat;
@@ -156,14 +157,6 @@ function ArcadeCabinet({ active, gameState, onScreenClick }) {
   useEffect(() => {
     cloned.traverse((child) => {
       if (child.isMesh) {
-        console.log('Mesh:', child.name, 'pos:', child.position.x.toFixed(3), child.position.y.toFixed(3), child.position.z.toFixed(3));
-      }
-      if (child.name === 'Screen') {
-        child.visible = false;
-        screenOriginal.current = child;
-        console.log('Screen found! World pos after scale will be:', child.position.x * 2.5, child.position.y * 2.5, child.position.z * 2.5);
-      }
-      if (child.isMesh && child.name !== 'Screen') {
         child.castShadow = true;
         child.receiveShadow = true;
       }
@@ -187,7 +180,7 @@ function ArcadeCabinet({ active, gameState, onScreenClick }) {
     }
   });
 
-  const screenConfig = useRef({ x: -0.005, y: 0.815, z: 0.4, scaleX: 2.78, scaleY: 2.7, rotX: -0.16, rotY: 0, rotZ: 0 });
+  const screenConfig = useRef({ x: -0.005, y: 0.815, z: 0.38, scaleX: 3.15, scaleY: 2.94, rotX: -0.22, rotY: 0, rotZ: 0 });
   const guiRef = useRef(null);
 
   useEffect(() => {
@@ -257,7 +250,7 @@ function CameraRig({ gameState }) {
   const progressRef = useRef(0);
 
   useFrame(() => {
-    const target = gameState === 'start' ? 0 : 1;
+    const target = gameState === 'start' ? 0 : (gameState === 'coin' ? 0.6 : 1);
     progressRef.current += (target - progressRef.current) * 0.025;
     const t = progressRef.current;
 
@@ -278,64 +271,133 @@ function CameraRig({ gameState }) {
   return null;
 }
 
-function SceneContent({ active, setActive, gameState, setGameState, onOpen }) {
+function Coin({ inserting }) {
+  const coinRef = useRef();
+  const startTime = useRef(0);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (inserting) {
+      setVisible(true);
+      startTime.current = performance.now();
+    }
+  }, [inserting]);
+
+  useFrame(() => {
+    if (!coinRef.current || !visible) return;
+    const elapsed = (performance.now() - startTime.current) / 1000;
+
+    if (elapsed < 0.4) {
+      coinRef.current.position.set(0.8, -0.5 + elapsed * 2, 2.5 - elapsed * 2);
+      coinRef.current.rotation.x = elapsed * 8;
+      coinRef.current.rotation.z = elapsed * 4;
+    } else if (elapsed < 0.8) {
+      const t = (elapsed - 0.4) / 0.4;
+      coinRef.current.position.set(0.8 - t * 0.8, -0.5 + 0.8 - t * 2.2, 2.5 - 0.8 + t * 0.3);
+      coinRef.current.rotation.x += 0.15;
+      coinRef.current.rotation.z = Math.PI / 2;
+    } else if (elapsed < 1.0) {
+      const t = (elapsed - 0.8) / 0.2;
+      coinRef.current.position.y = -1.9 - t * 0.3;
+      coinRef.current.scale.setScalar(1 - t);
+    } else {
+      setVisible(false);
+    }
+  });
+
+  if (!visible) return null;
+
+  return (
+    <mesh ref={coinRef}>
+      <cylinderGeometry args={[0.12, 0.12, 0.02, 16]} />
+      <meshStandardMaterial color="#ffcc00" metalness={0.9} roughness={0.2} />
+    </mesh>
+  );
+}
+
+function SceneContent({ active, setActive, gameState, setGameState, onOpen, coinInserting }) {
   return (
     <>
-      <ambientLight intensity={0.15} color="#6666aa" />
+      {/* Strong warm ambient to lift everything */}
+      <ambientLight intensity={1.5} color="#ccaa88" />
 
+      {/* Bright warm overhead */}
       <spotLight
-        position={[0, 5, 4]}
-        angle={0.5}
-        penumbra={0.6}
-        intensity={6}
+        position={[0, 6, 3]}
+        angle={0.9}
+        penumbra={0.5}
+        intensity={15}
+        color="#ffddbb"
         castShadow
-        shadow-mapSize={[512, 512]}
       />
 
-      <spotLight
-        position={[-3, 3, 2]}
-        angle={0.8}
-        penumbra={0.8}
-        intensity={2}
-        color="#4466ff"
+      {/* Front light so cabinet face is visible */}
+      <directionalLight
+        position={[0, 3, 6]}
+        intensity={3}
+        color="#ffeedd"
       />
 
-      <spotLight
-        position={[3, 3, 2]}
-        angle={0.8}
-        penumbra={0.8}
-        intensity={2}
-        color="#ff4466"
-      />
+      {/* Left fill */}
+      <pointLight position={[-4, 2, 3]} intensity={5} color="#8899cc" distance={12} />
 
+      {/* Right fill */}
+      <pointLight position={[4, 2, 3]} intensity={5} color="#ccaa77" distance={12} />
+
+      {/* Screen glow */}
       <pointLight
-        position={[0, -1, 2]}
+        position={[0, 0.5, 1.5]}
         intensity={2}
-        color={gameState === 'playing' ? PROJECTS[active].color : '#4444ff'}
+        color={gameState === 'playing' ? PROJECTS[active].color : '#4466ff'}
         distance={5}
       />
 
+      {/* Floor bounce */}
+      <pointLight position={[0, -2, 2]} intensity={2} color="#665577" distance={6} />
+
       <CameraRig gameState={gameState} />
+
+      <Coin inserting={coinInserting} />
 
       <Suspense fallback={null}>
         <ArcadeCabinet
           active={active}
           gameState={gameState}
           onScreenClick={() => {
-            if (gameState === 'start') setGameState('playing');
+            if (gameState === 'start') setGameState('coin');
             else if (gameState === 'playing') onOpen(PROJECTS[active]);
           }}
         />
       </Suspense>
 
+      {/* Floor - dark purple carpet like arcade */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.4, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
-        <meshStandardMaterial color="#08080f" roughness={0.92} metalness={0.1} />
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial color="#1a1528" roughness={0.95} />
       </mesh>
 
-      <mesh rotation={[0, 0, 0]} position={[0, 2, -4]}>
-        <planeGeometry args={[30, 12]} />
-        <meshStandardMaterial color="#0a0a14" roughness={1} />
+      {/* Back wall - warm brick tone */}
+      <mesh position={[0, 1.5, -3]}>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#3d2a20" roughness={0.95} />
+      </mesh>
+
+      {/* Left wall */}
+      <mesh rotation={[0, Math.PI / 2, 0]} position={[-6, 1.5, 0]}>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#352520" roughness={0.95} />
+      </mesh>
+
+      {/* Right wall */}
+      <mesh rotation={[0, -Math.PI / 2, 0]} position={[6, 1.5, 0]}>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#352520" roughness={0.95} />
+      </mesh>
+
+      {/* Ceiling */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 5, 0]}>
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial color="#1a1215" roughness={1} />
       </mesh>
     </>
   );
@@ -344,8 +406,19 @@ function SceneContent({ active, setActive, gameState, setGameState, onOpen }) {
 export default function ArcadePortfolio() {
   const [active, setActive] = useState(0);
   const [gameState, setGameState] = useState('start');
+  const [coinInserting, setCoinInserting] = useState(false);
   const containerRef = useRef();
   const p = PROJECTS[active];
+
+  useEffect(() => {
+    if (gameState === 'coin') {
+      setCoinInserting(true);
+      setTimeout(() => {
+        setGameState('playing');
+        setCoinInserting(false);
+      }, 1200);
+    }
+  }, [gameState]);
 
   const openModal = (project) => {
     const modal = document.getElementById('work-modal');
@@ -361,7 +434,7 @@ export default function ArcadePortfolio() {
   useEffect(() => {
     const onKey = (e) => {
       if (gameState === 'start') {
-        if (e.key === 'Enter' || e.key === ' ') { setGameState('playing'); e.preventDefault(); }
+        if (e.key === 'Enter' || e.key === ' ') { setGameState('coin'); e.preventDefault(); }
         return;
       }
       if (e.key === 'ArrowRight') { setActive(prev => (prev + 1) % N); e.preventDefault(); }
@@ -387,14 +460,15 @@ export default function ArcadePortfolio() {
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true }}
       >
-        <color attach="background" args={['#08080f']} />
-        <fog attach="fog" args={['#08080f', 6, 18]} />
+        <color attach="background" args={['#1a1220']} />
+        <fog attach="fog" args={['#1a1220', 8, 22]} />
         <SceneContent
           active={active}
           setActive={setActive}
           gameState={gameState}
           setGameState={setGameState}
           onOpen={openModal}
+          coinInserting={coinInserting}
         />
       </Canvas>
 
@@ -461,7 +535,7 @@ export default function ArcadePortfolio() {
       )}
 
       {gameState === 'start' && (
-        <button onClick={() => setGameState('playing')} style={{
+        <button onClick={() => setGameState('coin')} style={{
           position: 'absolute', bottom: '20%', left: '50%', transform: 'translateX(-50%)',
           background: 'rgba(255,255,62,0.1)', border: '2px solid #FFFF62',
           color: '#FFFF62', fontSize: 16, padding: '14px 40px', cursor: 'pointer', zIndex: 5,
