@@ -46,9 +46,7 @@ export default function ArcadePortfolio() {
 
     const app = new Application(canvas);
     appRef.current = app;
-    app.load(SPLINE_URL).then(() => {
-      console.log('Spline loaded');
-    });
+    app.load(SPLINE_URL);
   }, []);
 
   useEffect(() => {
@@ -93,24 +91,14 @@ export default function ArcadePortfolio() {
           pointerEvents: 'none', zIndex: 5,
         }}>
           <div>
-            <div style={{
-              fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2,
-              textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4,
-            }}>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4 }}>
               {String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}
             </div>
-            <div style={{
-              fontFamily: '"Silkscreen", monospace', fontSize: 26, letterSpacing: 2,
-              color: p.color, textShadow: `0 0 20px ${p.color}44`,
-            }}>{p.name}</div>
+            <div style={{ fontFamily: '"Silkscreen", monospace', fontSize: 26, letterSpacing: 2, color: p.color, textShadow: `0 0 20px ${p.color}44` }}>{p.name}</div>
           </div>
           <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
             {PROJECTS.map((_, i) => (
-              <div key={i} style={{
-                width: i === active ? 18 : 4, height: 4,
-                background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)',
-                transition: 'width 0.3s',
-              }} />
+              <div key={i} style={{ width: i === active ? 18 : 4, height: 4, background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)', transition: 'width 0.3s' }} />
             ))}
           </div>
         </div>
@@ -118,18 +106,8 @@ export default function ArcadePortfolio() {
 
       {gameState === 'playing' && (
         <>
-          <button onClick={() => setActive(prev => (prev - 1 + N) % N)} style={{
-            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-            color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5,
-            fontFamily: '"Silkscreen", monospace',
-          }}>&lt;</button>
-          <button onClick={() => setActive(prev => (prev + 1) % N)} style={{
-            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-            color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5,
-            fontFamily: '"Silkscreen", monospace',
-          }}>&gt;</button>
+          <button onClick={() => setActive(prev => (prev - 1 + N) % N)} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5, fontFamily: '"Silkscreen", monospace' }}>&lt;</button>
+          <button onClick={() => setActive(prev => (prev + 1) % N)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5, fontFamily: '"Silkscreen", monospace' }}>&gt;</button>
         </>
       )}
     </div>
