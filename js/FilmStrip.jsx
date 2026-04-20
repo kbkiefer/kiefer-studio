@@ -15,6 +15,83 @@ const PROJECTS = [
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
 
+function CRTOverlay({ active, gameState, projects }) {
+  const canvasRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (gameState === 'playing') {
+      const timer = setTimeout(() => setVisible(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setVisible(false);
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !visible) return;
+    const ctx = canvas.getContext('2d');
+    const W = 512, H = 400;
+    const p = projects[active];
+
+    ctx.fillStyle = '#080818';
+    ctx.fillRect(0, 0, W, H);
+
+    for (let y = 0; y < H; y += 3) { ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fillRect(0, y, W, 1); }
+
+    ctx.fillStyle = p.color; ctx.globalAlpha = 0.12; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.strokeRect(10, 10, W - 20, H - 20);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillText(`${String(active + 1).padStart(2, '0')}/${projects.length}`, 16, 26);
+    ctx.textAlign = 'right'; ctx.fillText(p.tech, W - 16, 26); ctx.textAlign = 'left';
+
+    ctx.fillStyle = p.color; ctx.font = 'bold 36px "Silkscreen", monospace';
+    const name = p.name.toUpperCase();
+    ctx.fillText(name, (W - ctx.measureText(name).width) / 2, H / 2 - 15);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '13px "JetBrains Mono", monospace';
+    ctx.fillText(p.tags, (W - ctx.measureText(p.tags).width) / 2, H / 2 + 15);
+
+    ctx.fillStyle = '#FFFF62'; ctx.font = 'bold 12px "Silkscreen", monospace';
+    const v = 'ENTER: VIEW PROJECT';
+    ctx.fillText(v, (W - ctx.measureText(v).width) / 2, H - 25);
+  }, [active, visible, projects]);
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: '50%', left: '50%',
+      transform: 'translate(-50%, -60%)',
+      width: 'min(52vw, 52vh * 1.28)',
+      aspectRatio: '512 / 400',
+      maxWidth: '600px',
+      zIndex: 3,
+      borderRadius: 'clamp(6px, 1vw, 14px)',
+      overflow: 'hidden',
+      background: '#080818',
+      boxShadow: '0 0 40px rgba(0,100,255,0.12), inset 0 0 80px rgba(0,0,0,0.4)',
+      animation: 'screenFlicker 0.6s ease-out',
+      pointerEvents: 'none',
+    }}>
+      <canvas ref={canvasRef} width={512} height={400} style={{
+        width: '100%', height: '100%', imageRendering: 'pixelated', display: 'block',
+      }} />
+      <style>{`
+        @keyframes screenFlicker {
+          0% { opacity: 0; filter: brightness(3) saturate(0); }
+          30% { opacity: 1; filter: brightness(2) saturate(0.5); }
+          60% { opacity: 0.8; filter: brightness(1.5) saturate(0.8); }
+          100% { opacity: 1; filter: brightness(1) saturate(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function ArcadePortfolio() {
   const [active, setActive] = useState(0);
   const [gameState, setGameState] = useState('start');
@@ -50,7 +127,9 @@ export default function ArcadePortfolio() {
     if (!el) return;
     const onScroll = () => {
       const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight * 0.4 && r.bottom > window.innerHeight * 0.5 && gameStateRef.current === 'start') setGameState('playing');
+      if (r.top < window.innerHeight * 0.4 && r.bottom > window.innerHeight * 0.5 && gameStateRef.current === 'start') {
+        setGameState('playing');
+      }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -75,6 +154,33 @@ export default function ArcadePortfolio() {
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} onWheel={onWheel}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'pan-y' }} />
+
+      {/* CRT Screen overlay - fades in after zoom */}
+      <CRTOverlay active={active} gameState={gameState} projects={PROJECTS} />
+
+      {/* CRT Screen overlay - appears after zoom in */}
+      {gameState === 'playing' && (
+        <div id="crt-overlay" style={{
+          position: 'absolute',
+          top: '12%',
+          left: '24%',
+          width: '52%',
+          height: '52%',
+          zIndex: 3,
+          borderRadius: '12px',
+          overflow: 'hidden',
+          background: '#080818',
+          boxShadow: '0 0 30px rgba(0,100,255,0.15), inset 0 0 60px rgba(0,0,0,0.5)',
+          opacity: 0,
+          animation: 'screenOn 0.8s ease-out 0.3s forwards',
+        }}>
+          <canvas ref={screenCanvasRef} width={512} height={400} style={{
+            width: '100%',
+            height: '100%',
+            imageRendering: 'pixelated',
+          }} />
+        </div>
+      )}
       {gameState === 'playing' && (
         <div style={{ position: 'absolute', bottom: 20, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'none', zIndex: 5 }}>
           <div>
