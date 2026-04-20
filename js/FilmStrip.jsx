@@ -2,17 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Application } from '@splinetool/runtime';
 
 const PROJECTS = [
-  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF', desc: 'Real-time audio visualization powered by Metal shaders.' },
-  { name: 'Imago', tags: 'iOS _ AI _ ADHD', tech: 'iOS', color: '#22cc55', desc: 'An ADHD companion app using on-device AI.' },
-  { name: 'Border Child', tags: 'Web _ R3F _ Film', tech: 'Web', color: '#cc8822', desc: 'Cinematic scroll-driven website for a Laredo creative studio.' },
-  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading', tech: 'macOS', color: '#2299cc', desc: 'Sovereign trading terminal for macOS with Liquid Glass.' },
-  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', tech: 'iOS', color: '#8822cc', desc: 'Cymatics, audio entrainment, and Watch HR instrument.' },
-  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', tech: 'iOS', color: '#cc2244', desc: 'ADHD neural map task manager with AI categorization.' },
-  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', tech: 'Unity', color: '#ccaa22', desc: '3D transformation game. Caterpillar to butterfly.' },
-  { name: 'ShalaMakes', tags: 'Web _ 3D Print _ Store', tech: 'Web', color: '#22ccaa', desc: 'E-commerce for custom 3D printed products.' },
-  { name: 'Continuum', tags: 'macOS _ Vision _ AI', tech: 'macOS', color: '#4455cc', desc: 'Local visual perception for Apple Silicon at 20 FPS.' },
+  { name: 'Cymatics Lab', tags: 'iOS _ Metal _ Audio Viz', tech: 'iOS', color: '#012FFF' },
+  { name: 'Imago', tags: 'iOS _ AI _ ADHD', tech: 'iOS', color: '#22cc55' },
+  { name: 'Border Child', tags: 'Web _ R3F _ Film', tech: 'Web', color: '#cc8822' },
+  { name: 'NovaTrade', tags: 'macOS _ SwiftUI _ Trading', tech: 'macOS', color: '#2299cc' },
+  { name: 'Resonance', tags: 'iOS _ Metal _ Consciousness', tech: 'iOS', color: '#8822cc' },
+  { name: 'ClearMind', tags: 'iOS _ Canvas _ Neural Map', tech: 'iOS', color: '#cc2244' },
+  { name: 'Chrysalis', tags: 'Unity _ 3D _ Game', tech: 'Unity', color: '#ccaa22' },
+  { name: 'ShalaMakes', tags: 'Web _ 3D Print _ Store', tech: 'Web', color: '#22ccaa' },
+  { name: 'Continuum', tags: 'macOS _ Vision _ AI', tech: 'macOS', color: '#4455cc' },
 ];
-
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
 
@@ -23,10 +22,8 @@ export default function ArcadePortfolio() {
   const appRef = useRef(null);
   const activeRef = useRef(0);
   const gameStateRef = useRef('start');
-
   activeRef.current = active;
   gameStateRef.current = gameState;
-
   const p = PROJECTS[active];
 
   const openModal = useCallback((project) => {
@@ -35,7 +32,7 @@ export default function ArcadePortfolio() {
     document.getElementById('work-modal-hero').style.background = project.color;
     document.getElementById('work-modal-title').textContent = project.name;
     document.getElementById('work-modal-tags').textContent = project.tags;
-    document.getElementById('work-modal-body').innerHTML = `<p>${project.desc}</p>`;
+    document.getElementById('work-modal-body').innerHTML = `<p>${project.tags}</p>`;
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }, []);
@@ -43,20 +40,17 @@ export default function ArcadePortfolio() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || appRef.current) return;
-
     const app = new Application(canvas);
     appRef.current = app;
     app.load(SPLINE_URL);
   }, []);
 
   useEffect(() => {
-    const workSection = document.getElementById('projects');
-    if (!workSection) return;
+    const el = document.getElementById('projects');
+    if (!el) return;
     const onScroll = () => {
-      const rect = workSection.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.4 && rect.bottom > window.innerHeight * 0.5 && gameStateRef.current === 'start') {
-        setGameState('playing');
-      }
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight * 0.4 && r.bottom > window.innerHeight * 0.5 && gameStateRef.current === 'start') setGameState('playing');
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -75,35 +69,21 @@ export default function ArcadePortfolio() {
 
   const onWheel = (e) => {
     if (gameState !== 'playing') return;
-    if (Math.abs(e.deltaY) > 30) {
-      setActive(prev => ((prev + Math.sign(e.deltaY)) % N + N) % N);
-    }
+    if (Math.abs(e.deltaY) > 30) setActive(prev => ((prev + Math.sign(e.deltaY)) % N + N) % N);
   };
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} onWheel={onWheel}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'pan-y' }} />
-
       {gameState === 'playing' && (
-        <div style={{
-          position: 'absolute', bottom: 20, left: 18, right: 18,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-          pointerEvents: 'none', zIndex: 5,
-        }}>
+        <div style={{ position: 'absolute', bottom: 20, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'none', zIndex: 5 }}>
           <div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4 }}>
-              {String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}
-            </div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4 }}>{String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}</div>
             <div style={{ fontFamily: '"Silkscreen", monospace', fontSize: 26, letterSpacing: 2, color: p.color, textShadow: `0 0 20px ${p.color}44` }}>{p.name}</div>
           </div>
-          <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end' }}>
-            {PROJECTS.map((_, i) => (
-              <div key={i} style={{ width: i === active ? 18 : 4, height: 4, background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)', transition: 'width 0.3s' }} />
-            ))}
-          </div>
+          <div style={{ display: 'flex', gap: 4 }}>{PROJECTS.map((_, i) => (<div key={i} style={{ width: i === active ? 18 : 4, height: 4, background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)', transition: 'width 0.3s' }} />))}</div>
         </div>
       )}
-
       {gameState === 'playing' && (
         <>
           <button onClick={() => setActive(prev => (prev - 1 + N) % N)} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5, fontFamily: '"Silkscreen", monospace' }}>&lt;</button>
