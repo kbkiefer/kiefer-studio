@@ -108,7 +108,8 @@ function CRTScreen({ app, splineCanvas, gameState }) {
   const handleCardClick = useCallback((project, i) => {
     if (dragRef.current.moved) return;
     setSelectedProject(project);
-  }, []);
+    if (app) app.emitEvent('mouseDown', 'Screen Placeholder');
+  }, [app]);
 
   if (!rect) return null;
 
@@ -272,7 +273,10 @@ function CRTScreen({ app, splineCanvas, gameState }) {
           borderRadius: 'inherit',
         }}>
           <button
-            onClick={() => setSelectedProject(null)}
+            onClick={() => {
+              setSelectedProject(null);
+              if (app) app.emitEvent('mouseDown', 'Screen Placeholder');
+            }}
             style={{
               alignSelf: 'flex-start',
               fontFamily: '"Silkscreen", monospace',
