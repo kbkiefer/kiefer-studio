@@ -114,6 +114,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
 
   const cardW = rect.width * 0.42;
   const cardGap = rect.width * 0.03;
+  const s = rect.width / 600; // scale factor: 1.0 when screen is 600px wide
 
   return (
     <div
@@ -183,7 +184,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '6%',
+              gap: Math.max(2, 8 * s),
               padding: '5%',
               cursor: 'pointer',
               transition: 'border-color 0.2s, background 0.2s',
@@ -199,11 +200,11 @@ function CRTScreen({ app, splineCanvas, gameState }) {
           >
             <div style={{
               fontFamily: '"Silkscreen", monospace',
-              fontSize: 'clamp(6px, 2vw, 20px)',
+              fontSize: Math.max(4, 18 * s),
               color: p.color,
               textAlign: 'center',
-              letterSpacing: 1,
-              textShadow: `0 0 12px ${p.color}44`,
+              letterSpacing: s,
+              textShadow: `0 0 ${12 * s}px ${p.color}44`,
               lineHeight: 1.2,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -214,10 +215,10 @@ function CRTScreen({ app, splineCanvas, gameState }) {
             </div>
             <div style={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 'clamp(4px, 1vw, 10px)',
+              fontSize: Math.max(3, 10 * s),
               color: 'rgba(255,255,255,0.35)',
               textAlign: 'center',
-              letterSpacing: 0.5,
+              letterSpacing: 0.5 * s,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
             }}>
@@ -225,10 +226,10 @@ function CRTScreen({ app, splineCanvas, gameState }) {
             </div>
             <div style={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 'clamp(4px, 0.8vw, 9px)',
+              fontSize: Math.max(3, 8 * s),
               color: p.color + '66',
               textTransform: 'uppercase',
-              letterSpacing: 1,
+              letterSpacing: s,
               whiteSpace: 'nowrap',
             }}>
               {p.tech}
