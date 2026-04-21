@@ -22,6 +22,7 @@ function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   return {
     x: (v.x * 0.5 + 0.5) * canvas.clientWidth,
     y: (-v.y * 0.5 + 0.5) * canvas.clientHeight,
+    z: v.z,
   };
 }
 
@@ -65,9 +66,9 @@ function CRTScreen({ app, splineCanvas, gameState }) {
 
       const w = right - left;
       const h = bottom - top;
-      // Only show when screen occupies enough viewport (zoom is near complete)
-      const minScreenSize = splineCanvas.clientWidth * 0.3;
-      if (w > minScreenSize && h > minScreenSize * 0.6 && left > -w && top > -h) {
+      // Hide only if behind camera (z > 1 means behind near plane)
+      const behind = [tl, tr, bl, br].some(p => p.z > 1);
+      if (!behind && w > 10 && h > 10) {
         setRect({ left, top, width: w, height: h });
       } else {
         setRect(null);
@@ -109,7 +110,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
     setSelectedProject(project);
   }, []);
 
-  if (!rect || gameState !== 'playing') return null;
+  if (!rect) return null;
 
   const cardW = rect.width * 0.42;
   const cardGap = rect.width * 0.03;
