@@ -33,6 +33,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
   const dragRef = useRef({ active: false, startX: 0, startDragX: 0, moved: false });
   const rafRef = useRef(null);
   const stripRef = useRef(null);
+  const maskRef = useRef(null);
 
   // Track screen mesh position
   useEffect(() => {
@@ -70,8 +71,32 @@ function CRTScreen({ app, splineCanvas, gameState }) {
       const behind = [tl, tr, bl, br].some(p => p.z > 1);
       if (!behind && w > 10 && h > 10) {
         setRect({ left, top, width: w, height: h });
+
+        // Apply CSS mask to Spline canvas - punch a hole at the screen position
+        if (splineCanvas) {
+          const cW = splineCanvas.clientWidth;
+          const cH = splineCanvas.clientHeight;
+          const r = 20 * (w / 600); // corner radius scales with screen size
+          const svg = `url("data:image/svg+xml,${encodeURIComponent(
+            `<svg xmlns='http://www.w3.org/2000/svg' width='${cW}' height='${cH}'>` +
+            `<defs><mask id='m'>` +
+            `<rect width='100%' height='100%' fill='white'/>` +
+            `<rect x='${left}' y='${top}' width='${w}' height='${h}' rx='${r}' ry='${r}' fill='black'/>` +
+            `</mask></defs>` +
+            `<rect width='100%' height='100%' fill='white' mask='url(%23m)'/>` +
+            `</svg>`
+          )}")`;
+          splineCanvas.style.maskImage = svg;
+          splineCanvas.style.webkitMaskImage = svg;
+          splineCanvas.style.maskSize = '100% 100%';
+          splineCanvas.style.webkitMaskSize = '100% 100%';
+        }
       } else {
         setRect(null);
+        if (splineCanvas) {
+          splineCanvas.style.maskImage = 'none';
+          splineCanvas.style.webkitMaskImage = 'none';
+        }
       }
       rafRef.current = requestAnimationFrame(track);
     };
@@ -341,22 +366,15 @@ export default function ArcadePortfolio() {
     app.load(SPLINE_URL).then(() => {
       window.__splineApp = app;
 
-      // Make canvas background transparent so HTML behind shows through
+      // Make canvas support transparency for the CSS mask hole
       const renderer = app._renderer;
       if (renderer) {
         renderer.setClearAlpha(0);
         renderer.setClearColor(0x000000, 0);
       }
-      // Remove scene background color
       if (app._scene && app._scene.background) {
         app._scene.background = null;
       }
-      // Hide the Screen Placeholder so it becomes a transparent window
-      app._scene.traverse(obj => {
-        if (obj.name === 'Screen Placeholder') {
-          obj.visible = false;
-        }
-      });
 
       setAppLoaded(true);
     });
