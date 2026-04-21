@@ -14,29 +14,7 @@ const PROJECTS = [
 ];
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
-const CRT_W = 512;
-const CRT_H = 400;
-
-function drawCRT(ctx, project, index, total) {
-  const W = CRT_W, H = CRT_H;
-  ctx.fillStyle = '#080818';
-  ctx.fillRect(0, 0, W, H);
-  for (let y = 0; y < H; y += 3) { ctx.fillStyle = 'rgba(255,255,255,0.02)'; ctx.fillRect(0, y, W, 1); }
-  ctx.fillStyle = project.color; ctx.globalAlpha = 0.12; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
-  ctx.strokeStyle = project.color; ctx.lineWidth = 2; ctx.strokeRect(10, 10, W - 20, H - 20);
-  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '11px "JetBrains Mono", monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(`${String(index + 1).padStart(2, '0')}/${total}`, 16, 26);
-  ctx.textAlign = 'right'; ctx.fillText(project.tech, W - 16, 26); ctx.textAlign = 'left';
-  ctx.fillStyle = project.color; ctx.font = 'bold 36px "Silkscreen", monospace';
-  const name = project.name.toUpperCase();
-  ctx.fillText(name, (W - ctx.measureText(name).width) / 2, H / 2 - 15);
-  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '13px "JetBrains Mono", monospace';
-  ctx.fillText(project.tags, (W - ctx.measureText(project.tags).width) / 2, H / 2 + 15);
-  ctx.fillStyle = '#FFFF62'; ctx.font = 'bold 12px "Silkscreen", monospace';
-  const cta = 'ENTER: VIEW PROJECT';
-  ctx.fillText(cta, (W - ctx.measureText(cta).width) / 2, H - 25);
-}
+const INSET = 0.08;
 
 function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   const v = mesh.localToWorld(new camera.position.constructor(lx, ly, lz));
@@ -47,14 +25,16 @@ function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   };
 }
 
-function CRTScreen({ app, splineCanvas, active, gameState, projects }) {
-  const canvasRef = useRef(null);
+function CRTScreen({ app, splineCanvas, gameState, onSelectProject }) {
   const [rect, setRect] = useState(null);
+  const [dragX, setDragX] = useState(0);
+  const dragRef = useRef({ active: false, startX: 0, startDragX: 0, moved: false });
   const rafRef = useRef(null);
+  const stripRef = useRef(null);
 
+  // Track screen mesh position
   useEffect(() => {
     if (!app) return;
-
     let screenMesh = null;
     app._scene.traverse(obj => {
       if (obj.name === 'Screen Placeholder') screenMesh = obj;
@@ -64,14 +44,18 @@ function CRTScreen({ app, splineCanvas, active, gameState, projects }) {
     const geo = screenMesh.geometry;
     geo.computeBoundingBox();
     const bb = geo.boundingBox;
+    const rangeX = bb.max.x - bb.min.x;
+    const rangeY = bb.max.y - bb.min.y;
     const camera = app._camera;
 
     const track = () => {
       screenMesh.updateWorldMatrix(true, false);
-      const tl = projectPoint(screenMesh, camera, splineCanvas, bb.min.x, bb.max.y, 0);
-      const tr = projectPoint(screenMesh, camera, splineCanvas, bb.max.x, bb.max.y, 0);
-      const bl = projectPoint(screenMesh, camera, splineCanvas, bb.min.x, bb.min.y, 0);
-      const br = projectPoint(screenMesh, camera, splineCanvas, bb.max.x, bb.min.y, 0);
+      const inX = rangeX * INSET;
+      const inY = rangeY * INSET;
+      const tl = projectPoint(screenMesh, camera, splineCanvas, bb.min.x + inX, bb.max.y - inY, 0);
+      const tr = projectPoint(screenMesh, camera, splineCanvas, bb.max.x - inX, bb.max.y - inY, 0);
+      const bl = projectPoint(screenMesh, camera, splineCanvas, bb.min.x + inX, bb.min.y + inY, 0);
+      const br = projectPoint(screenMesh, camera, splineCanvas, bb.max.x - inX, bb.min.y + inY, 0);
 
       const left = Math.min(tl.x, tr.x, bl.x, br.x);
       const right = Math.max(tl.x, tr.x, bl.x, br.x);
@@ -82,50 +66,192 @@ function CRTScreen({ app, splineCanvas, active, gameState, projects }) {
       rafRef.current = requestAnimationFrame(track);
     };
     rafRef.current = requestAnimationFrame(track);
-
     return () => cancelAnimationFrame(rafRef.current);
   }, [app, splineCanvas]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || gameState !== 'playing') return;
-    const ctx = canvas.getContext('2d');
-    drawCRT(ctx, projects[active], active, N);
-  }, [active, gameState, projects]);
+  // Clamp drag position
+  const clampDrag = useCallback((x) => {
+    if (!stripRef.current || !rect) return x;
+    const stripW = stripRef.current.scrollWidth;
+    const viewW = rect.width;
+    const minX = -(stripW - viewW);
+    return Math.max(minX, Math.min(0, x));
+  }, [rect]);
+
+  // Mouse drag handlers
+  const onPointerDown = useCallback((e) => {
+    dragRef.current = { active: true, startX: e.clientX, startDragX: dragX, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [dragX]);
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.startX;
+    if (Math.abs(dx) > 4) dragRef.current.moved = true;
+    setDragX(clampDrag(dragRef.current.startDragX + dx));
+  }, [clampDrag]);
+
+  const onPointerUp = useCallback((e) => {
+    dragRef.current.active = false;
+  }, []);
+
+  const handleCardClick = useCallback((project, i) => {
+    if (dragRef.current.moved) return;
+    onSelectProject(project, i);
+  }, [onSelectProject]);
 
   if (!rect || gameState !== 'playing') return null;
 
+  const cardW = rect.width * 0.42;
+  const cardGap = rect.width * 0.03;
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={CRT_W}
-      height={CRT_H}
+    <div
       style={{
         position: 'absolute',
         left: rect.left,
         top: rect.top,
         width: rect.width,
         height: rect.height,
-        imageRendering: 'pixelated',
-        pointerEvents: 'none',
         zIndex: 3,
-        borderRadius: 4,
+        borderRadius: '5%',
+        overflow: 'hidden',
+        background: '#060612',
+        cursor: dragRef.current.active ? 'grabbing' : 'grab',
+        touchAction: 'pan-y',
+        userSelect: 'none',
       }}
-    />
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
+      {/* CRT glass bubble effect */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 'inherit',
+        background: 'radial-gradient(ellipse 120% 120% at 40% 35%, rgba(255,255,255,0.04) 0%, transparent 60%)',
+        pointerEvents: 'none', zIndex: 10,
+      }} />
+
+      {/* Scanlines */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none', borderRadius: 'inherit',
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)',
+        backgroundSize: '100% 4px',
+      }} />
+
+      {/* Screen glow edge */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 'inherit', pointerEvents: 'none', zIndex: 8,
+        boxShadow: 'inset 0 0 30px rgba(0,20,60,0.6), inset 0 0 60px rgba(0,0,0,0.4)',
+      }} />
+
+      {/* Draggable project strip */}
+      <div
+        ref={stripRef}
+        style={{
+          position: 'absolute',
+          top: '8%', bottom: '8%', left: '4%',
+          display: 'flex',
+          gap: cardGap,
+          alignItems: 'stretch',
+          transform: `translateX(${dragX}px)`,
+          transition: dragRef.current.active ? 'none' : 'transform 0.3s ease-out',
+        }}
+      >
+        {PROJECTS.map((p, i) => (
+          <div
+            key={i}
+            onClick={() => handleCardClick(p, i)}
+            style={{
+              width: cardW,
+              flexShrink: 0,
+              borderRadius: '4%',
+              border: `1px solid ${p.color}44`,
+              background: `linear-gradient(145deg, ${p.color}18 0%, #0a0a1a 60%)`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '6%',
+              padding: '5%',
+              cursor: 'pointer',
+              transition: 'border-color 0.2s, background 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = p.color + '88';
+              e.currentTarget.style.background = `linear-gradient(145deg, ${p.color}28 0%, #0a0a1a 50%)`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = p.color + '44';
+              e.currentTarget.style.background = `linear-gradient(145deg, ${p.color}18 0%, #0a0a1a 60%)`;
+            }}
+          >
+            <div style={{
+              fontFamily: '"Silkscreen", monospace',
+              fontSize: 'clamp(10px, 2.5vw, 22px)',
+              color: p.color,
+              textAlign: 'center',
+              letterSpacing: 1,
+              textShadow: `0 0 12px ${p.color}44`,
+              lineHeight: 1.2,
+            }}>
+              {p.name.toUpperCase()}
+            </div>
+            <div style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: 'clamp(7px, 1.2vw, 11px)',
+              color: 'rgba(255,255,255,0.35)',
+              textAlign: 'center',
+              letterSpacing: 0.5,
+            }}>
+              {p.tags}
+            </div>
+            <div style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: 'clamp(6px, 1vw, 9px)',
+              color: p.color + '66',
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+            }}>
+              {p.tech}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Scroll hint dots */}
+      <div style={{
+        position: 'absolute', bottom: '3%', left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 4, zIndex: 7, pointerEvents: 'none',
+      }}>
+        {PROJECTS.map((_, i) => {
+          const cardCenter = i * (cardW + cardGap) + cardW / 2;
+          const viewCenter = -dragX + (rect?.width || 0) / 2;
+          const dist = Math.abs(cardCenter - viewCenter);
+          const isNear = dist < cardW * 0.7;
+          return (
+            <div key={i} style={{
+              width: isNear ? 10 : 4, height: 4,
+              background: isNear ? '#FFFF62' : 'rgba(255,255,255,0.15)',
+              borderRadius: 2,
+              transition: 'width 0.2s, background 0.2s',
+            }} />
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
 export default function ArcadePortfolio() {
-  const [active, setActive] = useState(0);
   const [gameState, setGameState] = useState('start');
+  const [selectedProject, setSelectedProject] = useState(null);
   const [appLoaded, setAppLoaded] = useState(false);
   const canvasRef = useRef(null);
   const appRef = useRef(null);
-  const activeRef = useRef(0);
   const gameStateRef = useRef('start');
-  activeRef.current = active;
   gameStateRef.current = gameState;
-  const p = PROJECTS[active];
 
   const openModal = useCallback((project) => {
     const modal = document.getElementById('work-modal');
@@ -136,6 +262,7 @@ export default function ArcadePortfolio() {
     document.getElementById('work-modal-body').innerHTML = `<p>${project.tags}</p>`;
     modal.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+    setSelectedProject(project);
   }, []);
 
   useEffect(() => {
@@ -165,49 +292,25 @@ export default function ArcadePortfolio() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if (gameStateRef.current !== 'playing') return;
-      if (e.key === 'ArrowRight') { setActive(prev => (prev + 1) % N); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { setActive(prev => (prev - 1 + N) % N); e.preventDefault(); }
-      if (e.key === 'Enter' || e.key === ' ') { openModal(PROJECTS[activeRef.current]); e.preventDefault(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [openModal]);
-
-  const onWheel = (e) => {
-    if (gameState !== 'playing') return;
-    if (Math.abs(e.deltaY) > 30) setActive(prev => ((prev + Math.sign(e.deltaY)) % N + N) % N);
-  };
-
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} onWheel={onWheel}>
+    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
       <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'pan-y' }} />
 
       <CRTScreen
         app={appLoaded ? appRef.current : null}
         splineCanvas={canvasRef.current}
-        active={active}
         gameState={gameState}
-        projects={PROJECTS}
+        onSelectProject={openModal}
       />
 
-      {gameState === 'playing' && (
-        <div style={{ position: 'absolute', bottom: 20, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pointerEvents: 'none', zIndex: 5 }}>
-          <div>
-            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: 'rgba(240,236,228,0.4)', marginBottom: 4 }}>{String(active + 1).padStart(2, '0')} / {String(N).padStart(2, '0')} · {p.tech}</div>
-            <div style={{ fontFamily: '"Silkscreen", monospace', fontSize: 26, letterSpacing: 2, color: p.color, textShadow: `0 0 20px ${p.color}44` }}>{p.name}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 4 }}>{PROJECTS.map((_, i) => (<div key={i} style={{ width: i === active ? 18 : 4, height: 4, background: i === active ? '#FFFF62' : 'rgba(240,236,228,0.2)', transition: 'width 0.3s' }} />))}</div>
-        </div>
-      )}
-      {gameState === 'playing' && (
-        <>
-          <button onClick={() => setActive(prev => (prev - 1 + N) % N)} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5, fontFamily: '"Silkscreen", monospace' }}>&lt;</button>
-          <button onClick={() => setActive(prev => (prev + 1) % N)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.5)', fontSize: 18, padding: '10px 12px', cursor: 'pointer', zIndex: 5, fontFamily: '"Silkscreen", monospace' }}>&gt;</button>
-        </>
-      )}
+      <style>{`
+        @keyframes screenFlicker {
+          0% { opacity: 0; filter: brightness(3) saturate(0); }
+          30% { opacity: 1; filter: brightness(1.8) saturate(0.5); }
+          60% { opacity: 0.9; filter: brightness(1.3) saturate(0.8); }
+          100% { opacity: 1; filter: brightness(1) saturate(1); }
+        }
+      `}</style>
     </div>
   );
 }
