@@ -199,30 +199,37 @@ function CRTScreen({ app, splineCanvas, gameState }) {
           >
             <div style={{
               fontFamily: '"Silkscreen", monospace',
-              fontSize: 'clamp(10px, 2.5vw, 22px)',
+              fontSize: 'clamp(6px, 2vw, 20px)',
               color: p.color,
               textAlign: 'center',
               letterSpacing: 1,
               textShadow: `0 0 12px ${p.color}44`,
               lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
             }}>
               {p.name.toUpperCase()}
             </div>
             <div style={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 'clamp(7px, 1.2vw, 11px)',
+              fontSize: 'clamp(4px, 1vw, 10px)',
               color: 'rgba(255,255,255,0.35)',
               textAlign: 'center',
               letterSpacing: 0.5,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
             }}>
               {p.tags}
             </div>
             <div style={{
               fontFamily: '"JetBrains Mono", monospace',
-              fontSize: 'clamp(6px, 1vw, 9px)',
+              fontSize: 'clamp(4px, 0.8vw, 9px)',
               color: p.color + '66',
               textTransform: 'uppercase',
-              letterSpacing: 2,
+              letterSpacing: 1,
+              whiteSpace: 'nowrap',
             }}>
               {p.tech}
             </div>
