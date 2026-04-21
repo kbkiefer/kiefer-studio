@@ -14,7 +14,7 @@ const PROJECTS = [
 ];
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
-const INSET = 0.08;
+const INSET = 0.03;
 
 function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   const v = mesh.localToWorld(new camera.position.constructor(lx, ly, lz));
@@ -25,9 +25,10 @@ function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   };
 }
 
-function CRTScreen({ app, splineCanvas, gameState, onSelectProject }) {
+function CRTScreen({ app, splineCanvas, gameState }) {
   const [rect, setRect] = useState(null);
   const [dragX, setDragX] = useState(0);
+  const [selectedProject, setSelectedProject] = useState(null);
   const dragRef = useRef({ active: false, startX: 0, startDragX: 0, moved: false });
   const rafRef = useRef(null);
   const stripRef = useRef(null);
@@ -62,7 +63,15 @@ function CRTScreen({ app, splineCanvas, gameState, onSelectProject }) {
       const top = Math.min(tl.y, tr.y, bl.y, br.y);
       const bottom = Math.max(tl.y, tr.y, bl.y, br.y);
 
-      setRect({ left, top, width: right - left, height: bottom - top });
+      const w = right - left;
+      const h = bottom - top;
+      // Only show when screen occupies enough viewport (zoom is near complete)
+      const minScreenSize = splineCanvas.clientWidth * 0.3;
+      if (w > minScreenSize && h > minScreenSize * 0.6 && left > -w && top > -h) {
+        setRect({ left, top, width: w, height: h });
+      } else {
+        setRect(null);
+      }
       rafRef.current = requestAnimationFrame(track);
     };
     rafRef.current = requestAnimationFrame(track);
@@ -97,8 +106,8 @@ function CRTScreen({ app, splineCanvas, gameState, onSelectProject }) {
 
   const handleCardClick = useCallback((project, i) => {
     if (dragRef.current.moved) return;
-    onSelectProject(project, i);
-  }, [onSelectProject]);
+    setSelectedProject(project);
+  }, []);
 
   if (!rect || gameState !== 'playing') return null;
 
@@ -221,49 +230,95 @@ function CRTScreen({ app, splineCanvas, gameState, onSelectProject }) {
       </div>
 
       {/* Scroll hint dots */}
-      <div style={{
-        position: 'absolute', bottom: '3%', left: 0, right: 0,
-        display: 'flex', justifyContent: 'center', gap: 4, zIndex: 7, pointerEvents: 'none',
-      }}>
-        {PROJECTS.map((_, i) => {
-          const cardCenter = i * (cardW + cardGap) + cardW / 2;
-          const viewCenter = -dragX + (rect?.width || 0) / 2;
-          const dist = Math.abs(cardCenter - viewCenter);
-          const isNear = dist < cardW * 0.7;
-          return (
-            <div key={i} style={{
-              width: isNear ? 10 : 4, height: 4,
-              background: isNear ? '#FFFF62' : 'rgba(255,255,255,0.15)',
-              borderRadius: 2,
-              transition: 'width 0.2s, background 0.2s',
-            }} />
-          );
-        })}
-      </div>
+      {!selectedProject && (
+        <div style={{
+          position: 'absolute', bottom: '3%', left: 0, right: 0,
+          display: 'flex', justifyContent: 'center', gap: 4, zIndex: 7, pointerEvents: 'none',
+        }}>
+          {PROJECTS.map((_, i) => {
+            const cardCenter = i * (cardW + cardGap) + cardW / 2;
+            const viewCenter = -dragX + (rect?.width || 0) / 2;
+            const dist = Math.abs(cardCenter - viewCenter);
+            const isNear = dist < cardW * 0.7;
+            return (
+              <div key={i} style={{
+                width: isNear ? 10 : 4, height: 4,
+                background: isNear ? '#FFFF62' : 'rgba(255,255,255,0.15)',
+                borderRadius: 2,
+                transition: 'width 0.2s, background 0.2s',
+              }} />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Selected project detail view */}
+      {selectedProject && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 12,
+          background: '#060612',
+          display: 'flex', flexDirection: 'column',
+          padding: '6%',
+          animation: 'screenFlicker 0.4s ease-out',
+          borderRadius: 'inherit',
+        }}>
+          <button
+            onClick={() => setSelectedProject(null)}
+            style={{
+              alignSelf: 'flex-start',
+              fontFamily: '"Silkscreen", monospace',
+              fontSize: 'clamp(8px, 1.5vw, 12px)',
+              color: '#FFFF62',
+              background: 'none',
+              border: '1px solid #FFFF6244',
+              padding: '2% 4%',
+              cursor: 'pointer',
+              letterSpacing: 1,
+              marginBottom: '4%',
+            }}
+          >
+            {'< BACK'}
+          </button>
+          <div style={{
+            fontFamily: '"Silkscreen", monospace',
+            fontSize: 'clamp(16px, 4vw, 36px)',
+            color: selectedProject.color,
+            textShadow: `0 0 20px ${selectedProject.color}44`,
+            letterSpacing: 2,
+            marginBottom: '3%',
+          }}>
+            {selectedProject.name.toUpperCase()}
+          </div>
+          <div style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 'clamp(9px, 1.5vw, 13px)',
+            color: 'rgba(255,255,255,0.5)',
+            marginBottom: '4%',
+          }}>
+            {selectedProject.tags}
+          </div>
+          <div style={{
+            fontFamily: '"JetBrains Mono", monospace',
+            fontSize: 'clamp(8px, 1.2vw, 11px)',
+            color: selectedProject.color + '88',
+            textTransform: 'uppercase',
+            letterSpacing: 2,
+          }}>
+            {selectedProject.tech}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function ArcadePortfolio() {
   const [gameState, setGameState] = useState('start');
-  const [selectedProject, setSelectedProject] = useState(null);
   const [appLoaded, setAppLoaded] = useState(false);
   const canvasRef = useRef(null);
   const appRef = useRef(null);
   const gameStateRef = useRef('start');
   gameStateRef.current = gameState;
-
-  const openModal = useCallback((project) => {
-    const modal = document.getElementById('work-modal');
-    if (!modal) return;
-    document.getElementById('work-modal-hero').style.background = project.color;
-    document.getElementById('work-modal-title').textContent = project.name;
-    document.getElementById('work-modal-tags').textContent = project.tags;
-    document.getElementById('work-modal-body').innerHTML = `<p>${project.tags}</p>`;
-    modal.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-    setSelectedProject(project);
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -300,7 +355,6 @@ export default function ArcadePortfolio() {
         app={appLoaded ? appRef.current : null}
         splineCanvas={canvasRef.current}
         gameState={gameState}
-        onSelectProject={openModal}
       />
 
       <style>{`
