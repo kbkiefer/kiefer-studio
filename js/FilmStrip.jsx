@@ -14,7 +14,7 @@ const PROJECTS = [
 ];
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
-const INSET = -0.02;
+const INSET = 0.06;
 
 function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   const v = mesh.localToWorld(new camera.position.constructor(lx, ly, lz));
