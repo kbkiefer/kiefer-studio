@@ -14,7 +14,7 @@ const PROJECTS = [
 ];
 const N = PROJECTS.length;
 const SPLINE_URL = 'https://prod.spline.design/xNcB9vIJZhtTQGVX/scene.splinecode';
-const INSET = 0.03;
+const INSET = -0.02;
 
 function projectPoint(mesh, camera, canvas, lx, ly, lz) {
   const v = mesh.localToWorld(new camera.position.constructor(lx, ly, lz));
@@ -125,7 +125,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
         width: rect.width,
         height: rect.height,
         zIndex: 3,
-        borderRadius: '5%',
+        borderRadius: '8% / 10%',
         overflow: 'hidden',
         background: '#060612',
         cursor: dragRef.current.active ? 'grabbing' : 'grab',
