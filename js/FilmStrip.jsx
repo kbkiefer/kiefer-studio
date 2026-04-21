@@ -125,7 +125,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
         top: rect.top,
         width: rect.width,
         height: rect.height,
-        zIndex: 3,
+        zIndex: 1,
         borderRadius: '8% / 10%',
         overflow: 'hidden',
         background: '#060612',
@@ -340,6 +340,24 @@ export default function ArcadePortfolio() {
     appRef.current = app;
     app.load(SPLINE_URL).then(() => {
       window.__splineApp = app;
+
+      // Make canvas background transparent so HTML behind shows through
+      const renderer = app._renderer;
+      if (renderer) {
+        renderer.setClearAlpha(0);
+        renderer.setClearColor(0x000000, 0);
+      }
+      // Remove scene background color
+      if (app._scene && app._scene.background) {
+        app._scene.background = null;
+      }
+      // Hide the Screen Placeholder so it becomes a transparent window
+      app._scene.traverse(obj => {
+        if (obj.name === 'Screen Placeholder') {
+          obj.visible = false;
+        }
+      });
+
       setAppLoaded(true);
     });
   }, []);
@@ -362,13 +380,15 @@ export default function ArcadePortfolio() {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
-      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'pan-y' }} />
-
+      {/* CRT content sits BEHIND the Spline canvas - shows through transparent screen hole */}
       <CRTScreen
         app={appLoaded ? appRef.current : null}
         splineCanvas={canvasRef.current}
         gameState={gameState}
       />
+
+      {/* Spline canvas on top - transparent where Screen Placeholder was */}
+      <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block', touchAction: 'pan-y', position: 'relative', zIndex: 2, pointerEvents: 'none' }} />
 
       <style>{`
         @keyframes screenFlicker {
