@@ -83,7 +83,7 @@ function CRTScreen({ app, splineCanvas, gameState }) {
             `<rect width='100%' height='100%' fill='white'/>` +
             `<rect x='${left}' y='${top}' width='${w}' height='${h}' rx='${r}' ry='${r}' fill='black'/>` +
             `</mask></defs>` +
-            `<rect width='100%' height='100%' fill='white' mask='url(%23m)'/>` +
+            `<rect width='100%' height='100%' fill='white' mask='url(#m)'/>` +
             `</svg>`
           )}")`;
           splineCanvas.style.maskImage = svg;
@@ -366,15 +366,7 @@ export default function ArcadePortfolio() {
     app.load(SPLINE_URL).then(() => {
       window.__splineApp = app;
 
-      // Make canvas support transparency for the CSS mask hole
-      const renderer = app._renderer;
-      if (renderer) {
-        renderer.setClearAlpha(0);
-        renderer.setClearColor(0x000000, 0);
-      }
-      if (app._scene && app._scene.background) {
-        app._scene.background = null;
-      }
+      // No renderer changes needed - CSS mask handles the screen hole
 
       setAppLoaded(true);
     });
