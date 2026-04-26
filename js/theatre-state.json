@@ -1,0 +1,111 @@
+{
+  "shepiVersionByRecordIdv2": {},
+  "definitionVersion": "0.4.0",
+  "revisionHistory": ["initial"],
+  "sheetsById": {
+    "Arcade Screen": {
+      "sequence": {
+        "subUnitsPerUnit": 30,
+        "length": 6,
+        "tracksByObject": {
+          "Boot Sequence": {
+            "trackData": {
+              "screenOpacity": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "so0", "position": 0, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "so1", "position": 0.3, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "flickerOpacity": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "fl0", "position": 0, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl1", "position": 0.05, "connectedRight": true, "value": 0.9, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl2", "position": 0.1, "connectedRight": true, "value": 0.1, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl3", "position": 0.18, "connectedRight": true, "value": 0.7, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl4", "position": 0.25, "connectedRight": true, "value": 0.05, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl5", "position": 0.35, "connectedRight": true, "value": 0.3, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "fl6", "position": 0.4, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "bootTextOpacity": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "bt0", "position": 0.4, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "bt1", "position": 0.5, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "bt2", "position": 3.2, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "bt3", "position": 3.5, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "boot1Progress": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "b10", "position": 0.5, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "b11", "position": 1.8, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "boot2Progress": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "b20", "position": 2.0, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "b21", "position": 3.2, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "menuOpacity": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "mo0", "position": 3.5, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "mo1", "position": 3.8, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "menuItem0": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "mi00", "position": 3.8, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "mi01", "position": 4.1, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "menuItem1": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "mi10", "position": 4.0, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "mi11", "position": 4.3, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "menuItem2": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "mi20", "position": 4.2, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "mi21", "position": 4.5, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              },
+              "menuItem3": {
+                "type": "BasicKeyframedTrack",
+                "keyframes": [
+                  { "id": "mi30", "position": 4.4, "connectedRight": true, "value": 0, "handles": [0.5, 1, 0.5, 0] },
+                  { "id": "mi31", "position": 4.7, "connectedRight": true, "value": 1, "handles": [0.5, 1, 0.5, 0] }
+                ]
+              }
+            },
+            "trackIdByPropPath": {
+              "[\"screenOpacity\"]": "screenOpacity",
+              "[\"flickerOpacity\"]": "flickerOpacity",
+              "[\"bootTextOpacity\"]": "bootTextOpacity",
+              "[\"boot1Progress\"]": "boot1Progress",
+              "[\"boot2Progress\"]": "boot2Progress",
+              "[\"menuOpacity\"]": "menuOpacity",
+              "[\"menuItem0\"]": "menuItem0",
+              "[\"menuItem1\"]": "menuItem1",
+              "[\"menuItem2\"]": "menuItem2",
+              "[\"menuItem3\"]": "menuItem3"
+            }
+          }
+        }
+      },
+      "staticOverrides": {
+        "byObject": {}
+      }
+    }
+  }
+}
