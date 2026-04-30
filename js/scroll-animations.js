@@ -2,38 +2,53 @@ import Lenis from '@studio-freight/lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
-import { getModel, getCamera, getCanvas, lights, rebuildPixelBlit, setScrollRotation, setExitOffsetX, getExitOffsetX } from './bust.js';
-import { setFloatingObjectsVisible, getFloatingObjects } from './floating-objects.js';
-import { initDebugGUI, scrollConfig, modelConfig, exitConfig, setTimelineProgress, setExitProgress } from './debug-gui.js';
-import { initHeroGUI } from './hero-gui.js';
+import { getModel, getCamera, getCanvas, setScrollRotation, setExitOffsetX, setModelOffset } from './bust.js';
+import { setFloatingObjectsVisible } from './floating-objects.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
-let lenis;
+const scrollConfig = {
+  rotationY: 62.83,
+  camStartX: 0,
+  camStartY: 0.61,
+  camEndY: 0.91,
+  camStartZ: 1.9,
+  camEndZ: 1.44,
+  scrollLength: 850,
+  scrub: 1.5,
+};
 
-const mobileOverrides = window.innerWidth <= 768 ? { camStartZ: 2.8, camStartY: 0.5 } : {};
+const modelConfig = {
+  rotOffsetX: -0.002,
+  rotOffsetY: -0.632,
+  rotOffsetZ: -0.002,
+};
+
+const exitConfig = {
+  camExitX: -0.52,
+  modelExitX: 0.24,
+  modelExitY: -0.03,
+};
+
+let exitOffsetX = 0;
 
 function applyScrollToModel(p) {
   const camera = getCamera();
   if (!camera) return;
 
-  const cfg = scrollConfig;
-  const startY = mobileOverrides.camStartY || cfg.camStartY;
-  const startZ = mobileOverrides.camStartZ || cfg.camStartZ;
-
   setScrollRotation(
     modelConfig.rotOffsetX,
-    p * cfg.rotationY + modelConfig.rotOffsetY,
+    p * scrollConfig.rotationY + modelConfig.rotOffsetY,
     modelConfig.rotOffsetZ
   );
 
-  camera.position.x = cfg.camStartX + getExitOffsetX();
-  camera.position.y = startY + p * (cfg.camEndY - startY);
-  camera.position.z = startZ + p * (cfg.camEndZ - startZ);
+  camera.position.x = scrollConfig.camStartX + exitOffsetX;
+  camera.position.y = scrollConfig.camStartY + p * (scrollConfig.camEndY - scrollConfig.camStartY);
+  camera.position.z = scrollConfig.camStartZ + p * (scrollConfig.camEndZ - scrollConfig.camStartZ);
 }
 
 export function initScrollAnimations() {
-  lenis = new Lenis({
+  const lenis = new Lenis({
     duration: 1.2,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
     smoothWheel: true,
@@ -46,25 +61,10 @@ export function initScrollAnimations() {
   initBustScroll();
   initFloatingObjectsScroll();
   initTextReveals();
-
-  if (window.location.hash === '#debug') {
-    initDebugGUI(
-      (p) => { applyScrollToModel(p); },
-      lights,
-      rebuildPixelBlit,
-      (p) => { applyExitToModel(p); }
-    );
-
-    setTimeout(() => {
-      const shapes = getFloatingObjects();
-      if (shapes.length > 0) initHeroGUI(shapes);
-    }, 1000);
-  }
 }
 
 function initBustScroll() {
   const model = getModel();
-  const camera = getCamera();
   const canvas = getCanvas();
   if (!model || !canvas) return;
 
@@ -74,19 +74,27 @@ function initBustScroll() {
     end: () => `+=${scrollConfig.scrollLength}%`,
     scrub: scrollConfig.scrub,
     onUpdate: (self) => {
-      setTimelineProgress(self.progress);
       applyScrollToModel(self.progress);
     },
   });
 
   ScrollTrigger.create({
     trigger: '#statement',
-    start: 'top 30%',
-    end: 'bottom 50%',
+    start: 'top 72%',
+    end: 'top 18%',
     scrub: 1,
     onUpdate: (self) => {
-      setExitProgress(self.progress);
-      setExitOffsetX(self.progress * exitConfig.camExitX);
+      const isMobile = window.innerWidth <= 768;
+      const modelX = isMobile ? exitConfig.modelExitX * 0.45 : exitConfig.modelExitX;
+      const modelY = isMobile ? 0 : exitConfig.modelExitY;
+      exitOffsetX = self.progress * exitConfig.camExitX;
+      setExitOffsetX(exitOffsetX);
+      setModelOffset(self.progress * modelX, self.progress * modelY, 0);
+    },
+    onLeaveBack: () => {
+      exitOffsetX = 0;
+      setExitOffsetX(0);
+      setModelOffset(0, 0, 0);
     },
   });
 }
@@ -118,7 +126,7 @@ function initTextReveals() {
     });
   }
 
-  const aboutText = document.querySelector('#about .section__text');
+  const aboutText = document.querySelector('#about-text .section__text');
   if (aboutText) {
     const split = new SplitType(aboutText, { types: 'lines' });
     gsap.from(split.lines, {
@@ -130,6 +138,21 @@ function initTextReveals() {
       scrollTrigger: {
         trigger: aboutText,
         start: 'top 80%',
+        toggleActions: 'play none none reverse',
+      },
+    });
+  }
+
+  const workHeading = document.querySelector('.work__heading');
+  if (workHeading) {
+    gsap.from(workHeading, {
+      y: 40,
+      opacity: 0,
+      duration: 0.8,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: workHeading,
+        start: 'top 85%',
         toggleActions: 'play none none reverse',
       },
     });

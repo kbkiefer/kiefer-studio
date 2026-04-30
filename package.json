@@ -1,24 +1,15 @@
 {
-  "name": "kiefer-studio",
+  "name": "shader-kiefer-experiment",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@studio-freight/lenis": "^1.0.42",
     "gsap": "^3.15.0",
-    "lil-gui": "^0.21.0",
     "split-type": "^0.3.4",
     "three": "^0.184.0"
   },

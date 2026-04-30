@@ -3,12 +3,16 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { loadFloatingObjects, updateFloatingObjects, shapesScene, bandsScene } from './floating-objects.js';
 
 let scene, camera, renderer, model, bandsCamera;
+let baseModelPosition = new THREE.Vector3();
 let mouseRotX = 0, mouseRotY = 0;
 let currentMouseX = 0, currentMouseY = 0;
 
 export let scrollRotX = 0, scrollRotY = 0, scrollRotZ = 0;
 export let exitOffsetX = 0;
 
+let modelOffsetX = 0;
+let modelOffsetY = 0;
+let modelOffsetZ = 0;
 let pixelSize = 11;
 let canvas;
 
@@ -84,6 +88,7 @@ export function initBust() {
 
     model.position.sub(center);
     model.position.y += size.y * 0.05;
+    baseModelPosition.copy(model.position);
     model.scale.setScalar(1.37);
 
     scene.add(model);
@@ -143,6 +148,12 @@ export function setExitOffsetX(x) {
   exitOffsetX = x;
 }
 
+export function setModelOffset(x = 0, y = 0, z = 0) {
+  modelOffsetX = x;
+  modelOffsetY = y;
+  modelOffsetZ = z;
+}
+
 export function getExitOffsetX() {
   return exitOffsetX;
 }
@@ -176,6 +187,9 @@ function animate() {
   if (model) {
     currentMouseX += (mouseRotX - currentMouseX) * 0.05;
     currentMouseY += (mouseRotY - currentMouseY) * 0.05;
+    model.position.x += (baseModelPosition.x + modelOffsetX - model.position.x) * 0.08;
+    model.position.y += (baseModelPosition.y + modelOffsetY - model.position.y) * 0.08;
+    model.position.z += (baseModelPosition.z + modelOffsetZ - model.position.z) * 0.08;
     model.rotation.x = scrollRotX + currentMouseX;
     model.rotation.y = scrollRotY + currentMouseY;
     model.rotation.z = scrollRotZ;
@@ -183,13 +197,11 @@ function animate() {
 
   updateFloatingObjects(elapsed);
 
-  const hero = document.getElementById('hero');
-  const rect = hero ? hero.getBoundingClientRect() : null;
-
-  /* 1) Render bands at full resolution with static camera, clipped to hero */
   renderer.setRenderTarget(null);
   renderer.clear(true, true, true);
 
+  const hero = document.getElementById('hero');
+  const rect = hero ? hero.getBoundingClientRect() : null;
   if (rect && rect.bottom > 0) {
     const bottom = window.innerHeight - rect.bottom;
     renderer.setScissorTest(true);
@@ -199,24 +211,73 @@ function animate() {
     renderer.setScissorTest(false);
   }
 
-  /* 2) Render bust + shapes into low-res RT (pixelated) */
   renderer.setRenderTarget(lowResRT);
   renderer.clear(true, true, true);
   renderer.render(scene, camera);
 
-  /* 3) Blit pixelated bust ON TOP, clipped to top of screen down to bottom of blue section */
   renderer.setRenderTarget(null);
-  const statement = document.getElementById('statement');
-  if (statement) {
-    const stmtRect = statement.getBoundingClientRect();
-    const clipBottom = Math.max(0, window.innerHeight - stmtRect.bottom);
-    const clipHeight = window.innerHeight - clipBottom;
-    if (clipHeight > 0) {
-      renderer.setScissorTest(true);
-      renderer.setScissor(0, clipBottom, window.innerWidth, clipHeight);
-      renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+
+  const workEl = document.getElementById('work');
+  const pxState = window.__pixelTransitionState;
+
+  if (workEl && pxState) {
+    const wH = window.innerHeight;
+    const wW = window.innerWidth;
+    const workRect = workEl.getBoundingClientRect();
+    const workTopClamped = Math.max(0, workRect.top);
+    const workTopGL = wH - workTopClamped;
+    const aboveHeight = workTopClamped;
+
+    if (pxState.progress <= 0) {
+      if (aboveHeight > 0) {
+        renderer.setScissorTest(true);
+        renderer.setScissor(0, workTopGL, wW, aboveHeight);
+        renderer.setViewport(0, 0, wW, wH);
+        renderer.render(blitScene, blitCamera);
+        renderer.setScissorTest(false);
+      }
+    } else if (pxState.progress < 1) {
+      const BLOCK = pxState.BLOCK;
+      const cols = Math.ceil(wW / BLOCK);
+      const rows = Math.ceil(workRect.height / BLOCK);
+      const halfRows = rows / 2;
+      const tp = pxState.progress;
+
+      if (aboveHeight > 0) {
+        renderer.setScissorTest(true);
+        renderer.setScissor(0, workTopGL, wW, aboveHeight);
+        renderer.setViewport(0, 0, wW, wH);
+        renderer.render(blitScene, blitCamera);
+        renderer.setScissorTest(false);
+      }
+
+      const renderTop = workTopClamped;
+      const renderBot = Math.min(wH, workRect.top + BLOCK * 10);
+
+      if (renderBot > renderTop) {
+        const startRow = Math.max(0, Math.floor((renderTop - workRect.top) / BLOCK));
+        const endRow = Math.min(rows, Math.ceil((renderBot - workRect.top) / BLOCK));
+
+        renderer.setScissorTest(true);
+        for (let row = startRow; row < endRow; row++) {
+          const distFromEdge = Math.abs(row - halfRows) / halfRows;
+          for (let col = 0; col < cols; col++) {
+            const rowThreshold = distFromEdge * 0.6 + pxState.seedRandom(col, row) * 0.4;
+            if (tp > 1 - rowThreshold) {
+              const bx = col * BLOCK;
+              const glY = wH - (workRect.top + (row + 1) * BLOCK);
+              if (glY > -BLOCK && glY < wH) {
+                renderer.setScissor(bx, Math.max(0, glY), BLOCK, BLOCK);
+                renderer.setViewport(0, 0, wW, wH);
+                renderer.render(blitScene, blitCamera);
+              }
+            }
+          }
+        }
+        renderer.setScissorTest(false);
+      }
+    } else {
       renderer.render(blitScene, blitCamera);
-      renderer.setScissorTest(false);
     }
   } else {
     renderer.render(blitScene, blitCamera);
