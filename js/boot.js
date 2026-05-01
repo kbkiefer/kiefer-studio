@@ -5,7 +5,8 @@ const STATUS_MESSAGES = [
   'Mounting 3D pipeline...',
   'Preparing bust geometry...',
   'Calibrating pixel grid...',
-  'Rendering Borderlands materials...',
+  'Loading arcade cabinet...',
+  'Wiring scroll animations...',
   'System ready.',
 ];
 
