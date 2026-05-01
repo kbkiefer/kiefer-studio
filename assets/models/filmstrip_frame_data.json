@@ -1,0 +1,320 @@
+{
+  "model_file": "FilmStrip_Main.glb",
+  "object_name": "FilmStrip_Main",
+  "frame_body_material": "FilmStrip_Mat",
+  "strip_total_length": 12.0,
+  "segment_length": 1.0,
+  "strip_width": 0.7,
+  "strip_thickness": 0.03,
+  "frame_count": 12,
+  "frame_inner_width": 0.46,
+  "frame_inner_length": 0.9,
+  "perforations_per_side_per_segment": 8,
+  "coordinate_notes": {
+    "exported_as": "GLB binary glTF, +Y up (Three.js convention)",
+    "anchors": "Frame anchors are in Three.js world space when GLB is loaded at origin with no rotation",
+    "texturing": "Each frame has its own material slot (FilmStrip_Frame_00 through _11). Swap material.map per slot, OR replace the entire material with one bound to a per-frame texture. Each placeholder face has UVs that fully span [0,1]."
+  },
+  "frames": [
+    {
+      "index": 0,
+      "material_slot_index": 1,
+      "material_name": "FilmStrip_Frame_00",
+      "center_threejs": [
+        -5.4873,
+        -0.3658,
+        0.0765
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        -0.0
+      ]
+    },
+    {
+      "index": 1,
+      "material_slot_index": 2,
+      "material_name": "FilmStrip_Frame_01",
+      "center_threejs": [
+        -4.4897,
+        -0.2993,
+        0.06
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        -0.0
+      ]
+    },
+    {
+      "index": 2,
+      "material_slot_index": 3,
+      "material_name": "FilmStrip_Frame_02",
+      "center_threejs": [
+        -3.492,
+        -0.2328,
+        0.0436
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        -0.0
+      ]
+    },
+    {
+      "index": 3,
+      "material_slot_index": 4,
+      "material_name": "FilmStrip_Frame_03",
+      "center_threejs": [
+        -2.4944,
+        -0.1663,
+        0.0271
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        -0.0
+      ]
+    },
+    {
+      "index": 4,
+      "material_slot_index": 5,
+      "material_name": "FilmStrip_Frame_04",
+      "center_threejs": [
+        -1.4967,
+        -0.0998,
+        0.0107
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 5,
+      "material_slot_index": 6,
+      "material_name": "FilmStrip_Frame_05",
+      "center_threejs": [
+        -0.4991,
+        -0.0333,
+        -0.0058
+      ],
+      "normal_threejs": [
+        0.0164,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0165
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 6,
+      "material_slot_index": 7,
+      "material_name": "FilmStrip_Frame_06",
+      "center_threejs": [
+        0.4986,
+        0.0332,
+        -0.0221
+      ],
+      "normal_threejs": [
+        0.016,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0161
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        -0.0
+      ]
+    },
+    {
+      "index": 7,
+      "material_slot_index": 8,
+      "material_name": "FilmStrip_Frame_07",
+      "center_threejs": [
+        1.4963,
+        0.0997,
+        -0.0377
+      ],
+      "normal_threejs": [
+        0.0151,
+        0.001,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0152
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 8,
+      "material_slot_index": 9,
+      "material_name": "FilmStrip_Frame_08",
+      "center_threejs": [
+        2.4939,
+        0.1663,
+        -0.0527
+      ],
+      "normal_threejs": [
+        0.015,
+        0.001,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.015
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 9,
+      "material_slot_index": 10,
+      "material_name": "FilmStrip_Frame_09",
+      "center_threejs": [
+        3.4916,
+        0.2328,
+        -0.0682
+      ],
+      "normal_threejs": [
+        0.0159,
+        0.0011,
+        0.9999
+      ],
+      "tangent_threejs": [
+        0.9977,
+        0.0665,
+        -0.0159
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 10,
+      "material_slot_index": 11,
+      "material_name": "FilmStrip_Frame_10",
+      "center_threejs": [
+        4.4892,
+        0.2993,
+        -0.085
+      ],
+      "normal_threejs": [
+        0.0177,
+        0.0012,
+        0.9998
+      ],
+      "tangent_threejs": [
+        0.9976,
+        0.0665,
+        -0.0177
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    },
+    {
+      "index": 11,
+      "material_slot_index": 12,
+      "material_name": "FilmStrip_Frame_11",
+      "center_threejs": [
+        5.4868,
+        0.3658,
+        -0.1038
+      ],
+      "normal_threejs": [
+        0.0197,
+        0.0013,
+        0.9998
+      ],
+      "tangent_threejs": [
+        0.9976,
+        0.0665,
+        -0.0198
+      ],
+      "right_threejs": [
+        -0.0665,
+        0.9978,
+        0.0
+      ]
+    }
+  ]
+}

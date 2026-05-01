@@ -1,89 +1,326 @@
+@font-face {
+  font-family: 'Dogica Pixel';
+  src: url('/fonts/dogicapixelbold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Dogica Pixel';
+  src: url('/fonts/dogicapixel.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SELECTED WORK SECTION
+   Dark cinematic portfolio section with R3F canvas backdrop
+   ═══════════════════════════════════════════════════════════════ */
+
 .selected-work {
   position: relative;
-  z-index: 100;
+  width: 100%;
   min-height: 100vh;
-  background: var(--bg-dark, #0a0a12);
-  overflow: hidden;
+  background: #060610;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
-.selected-work__canvas {
+/* ── CRT / Noise overlay ── */
+.selected-work::before {
+  content: '';
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
 }
 
-.selected-work__canvas canvas {
-  width: 100% !important;
-  height: 100% !important;
+.selected-work::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.5) 85%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
 }
 
+/* ── Gem canvas (behind heading) ── */
+.selected-work__gem-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 40%;
+  z-index: 1;
+}
+
+/* ── Content layer ── */
 .selected-work__content {
   position: relative;
-  z-index: 1;
-  pointer-events: none;
-  padding: 0 48px;
-  min-height: 100vh;
+  z-index: 20;
+  flex: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  padding: 0 48px;
+  pointer-events: none;
 }
 
+.selected-work__content a,
+.selected-work__content button {
+  pointer-events: auto;
+}
+
+.selected-work__copy-cam {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(1, 47, 255, 0.8);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* ── Header area: gem + heading + description ── */
 .selected-work__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 40px;
   padding-top: 80px;
+  flex-wrap: wrap;
 }
 
+/* ── Gem spacer (3D gem rendered in R3F canvas) ── */
 .selected-work__gem-spacer {
-  width: 200px;
+  flex-shrink: 0;
+  width: 140px;
+}
+
+/* ── Heading block ── */
+.selected-work__heading-block {
   flex-shrink: 0;
 }
 
-.selected-work__text {
-  max-width: 600px;
-}
-
 .selected-work__title {
-  font-family: var(--font-display, 'Silkscreen', monospace);
-  text-transform: uppercase;
+  font-family: 'Dogica Pixel', 'Silkscreen', monospace;
+  font-weight: 700;
   letter-spacing: 4px;
-  line-height: 1;
-  color: var(--text-cream, #fcf9f3);
+  text-transform: uppercase;
+  color: #fcf9f3;
   text-shadow:
-    3px 1px 0 var(--aberration-pink, rgba(255, 189, 255, 0.6)),
-    -3px -1px 0 var(--aberration-cyan, rgba(125, 255, 255, 0.4));
-  margin-bottom: 24px;
+    2px 1px 0 rgba(255, 189, 255, 0.5),
+    -2px -1px 0 rgba(125, 255, 255, 0.3),
+    0 0 40px rgba(252, 249, 243, 0.06);
 }
 
-.selected-work__title-sm {
-  font-size: clamp(24px, 4vw, 48px);
-  font-weight: 400;
-  letter-spacing: 12px;
+.selected-work__title-line {
+  display: block;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.2;
+  letter-spacing: 6px;
 }
 
-.selected-work__title-lg {
-  font-size: clamp(56px, 10vw, 120px);
+.selected-work__title-line--large {
+  font-size: clamp(56px, 8vw, 110px);
+  letter-spacing: 10px;
+}
+
+/* ── Description block ── */
+.selected-work__description {
+  max-width: 380px;
+  padding-top: 24px;
+}
+
+.selected-work__desc-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(252, 249, 243, 0.6);
+}
+
+.selected-work__desc-highlight {
+  color: #4488ff;
+}
+
+/* ── Film strip mount area (future 3D content) ── */
+.selected-work__strip-area {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ── Scroll prompt ── */
+.selected-work__scroll-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 0 40px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(252, 249, 243, 0.25);
+}
+
+.selected-work__scroll-arrow {
+  font-size: 16px;
+  animation: scroll-bounce 2s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+/* ── Project detail overlay ── */
+.project-detail {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 48px;
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease 0.8s;
+}
+
+.project-detail--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.project-detail__back {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 20px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: color 0.2s, border-color 0.2s;
+  pointer-events: auto;
+}
+
+.project-detail__back:hover {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.project-detail__content {
+  max-width: 800px;
+  margin: 60px auto 0;
+}
+
+.project-detail__badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.project-detail__num {
+  display: inline-block;
+  background: currentColor;
+  color: #000;
+  padding: 2px 8px;
+  margin-right: 12px;
   font-weight: 700;
 }
 
-.selected-work__desc {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 12px;
-  letter-spacing: 2px;
+.project-detail__title {
+  font-family: 'Dogica Pixel', 'Silkscreen', monospace;
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 700;
+  letter-spacing: 4px;
   text-transform: uppercase;
-  line-height: 1.8;
-  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 12px;
+  text-shadow:
+    2px 1px 0 rgba(255, 189, 255, 0.4),
+    -2px -1px 0 rgba(125, 255, 255, 0.25);
 }
 
-.selected-work__desc-accent {
-  color: var(--bg-blue, #012FFF);
+.project-detail__year {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 2px;
+  margin-bottom: 32px;
 }
 
+.project-detail__desc {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  max-width: 600px;
+  margin-bottom: 48px;
+}
+
+.project-detail__placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.1);
+  letter-spacing: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .selected-work__content { padding: 0 20px; }
+  .selected-work__content {
+    padding: 0 20px;
+  }
+
   .selected-work__header {
     flex-direction: column;
+    gap: 24px;
     padding-top: 60px;
   }
-  .selected-work__gem-spacer { display: none; }
+
+  .selected-work__gem-spacer {
+    display: none;
+  }
+
+  .selected-work__description {
+    max-width: 100%;
+    padding-top: 16px;
+  }
+
+  .selected-work__strip-area {
+    min-height: 280px;
+  }
 }
