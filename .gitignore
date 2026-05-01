@@ -6,3 +6,9 @@ assets/arcade_portfolio.glb
 assets/laptop.glb
 assets/iphone_with_screen_placeholder.glb
 assets/legal-demo-loop.mp4
+.playwright-cli/
+assets/*.blend
+assets/*.blend1
+assets/*.fbx
+assets/sbsar/
+assets/substance tx/
