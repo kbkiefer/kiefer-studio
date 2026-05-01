@@ -2,3 +2,7 @@ node_modules/
 dist/
 .DS_Store
 .superpowers/
+assets/arcade_portfolio.glb
+assets/laptop.glb
+assets/iphone_with_screen_placeholder.glb
+assets/legal-demo-loop.mp4

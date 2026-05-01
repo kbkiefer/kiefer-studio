@@ -1,0 +1,29 @@
+{
+  "mood": "Dark nostalgic arcade den. Late-night gaming in a forgotten corner bar. CRT phosphor warmth against cold brick.",
+  "temperature": "warm-dark",
+  "narrative": "A lone arcade cabinet stands against a weathered brick wall, bathed in colored light spill. The screen glows amber-warm like it's been on for hours waiting for someone to play. The name KIEFER burns in pixel-yellow on the marquee. This isn't a clean museum piece - it's lived-in, corner-of-a-dive-bar energy.",
+  "vetoes": [
+    "No clean/pristine surfaces - everything has wear and grit",
+    "No symmetric lighting - dramatic side-lit only",
+    "No bloom above 0.2 - CRT glow is subtle not blinding",
+    "No flat grey materials - everything has character",
+    "No bright ambient - this is a dark room with light sources",
+    "No purple-to-blue gradient backgrounds",
+    "No perfectly symmetric arrangements"
+  ],
+  "constraints": [
+    "Style is hand-drawn Borderlands cel-shaded: thick dark outlines, visible brush-stroke textures, comic-book shadowing",
+    "Scene is small and intimate - one cabinet, one wall, one floor",
+    "CRT screen is the warmest light source in the scene",
+    "Color temperature contrast: warm amber center, cold green edge"
+  ],
+  "guidance": {
+    "geometry-form": "Arcade cabinet is the hero object. Slightly chunky proportions, not perfectly rectangular - beveled edges, slight taper. Include: marquee header with KIEFER text area, CRT screen recessed into bezel, control panel angled downward with joystick mount and 4 button holes, coin slot panel, speaker grille area, base with slight kick-out. Behind it: brick wall made of individual box geometries with mortar gaps. Below: worn wood plank floor made of long thin boxes with slight height variation.",
+    "geometry-detail": "Joystick: chrome stick with rubber ball top. 4 arcade buttons: 3 red + 1 blue + 1 yellow (round cylinders, slightly domed). Coin slot: thin rectangle recess. Screws on control panel corners (tiny cylinders). A forgotten quarter on the floor near the cabinet base. Dust motes as tiny spheres in the light cone from the screen.",
+    "materials-surface": "Cabinet body: matte dark paint with subtle roughness variation (MeshStandardMaterial roughness 0.85). CRT screen: emissive amber with slight Fresnel-like edge darkening. Bricks: rough porous surface (roughness 0.95). Wood floor: semi-glossy worn planks (roughness 0.7). Buttons: glossy plastic (roughness 0.2). Joystick ball: rubber matte (roughness 0.6), stick chrome (roughness 0.15, metalness 0.9). Marquee: slightly translucent backlit feel via emissive.",
+    "materials-color": "Palette is amber-dominated. CRT screen: warm amber #C4A35A with emissive. Brick wall: dark rust #8B3A2A to deep orange #A0522D, mortar #2A2A2A. Cabinet body: near-black #1A1A1E with dark grey #2A2A2E panels. Wood floor: dark walnut #3E2723 with grain variation. Buttons: red #CC3333, blue #3399CC, yellow #CCCC33. Joystick ball: red #CC3333. Marquee text area: dark with yellow #FFD700 emissive for KIEFER text. Quarter: silver #C0C0C0 metallic.",
+    "lighting": "Key: warm amber point light from the CRT screen position, casting soft glow on control panel and floor (color #C4A35A, intensity 2, distance 4). Fill: cold green spot from the right side, hitting the brick wall edge (color #4CAF50, intensity 0.8). Rim: faint magenta from behind-left (color #993366, intensity 0.3). NO overhead light. NO ambient above 0.1 intensity. Deep shadows everywhere. The CRT is THE light source.",
+    "composition": "Camera slightly below eye level, angled up at the cabinet. FOV 40 for slight telephoto compression. Cabinet positioned in right-third of frame. Camera position roughly (1.5, 0.8, 2.5) looking at cabinet center (0, 0.7, 0). Shallow depth simulation optional.",
+    "animation": "CRT screen emissive intensity oscillates slowly (sin wave, period ~3s, range 0.8-1.2). Subtle scan-line effect if possible. Dust motes drift lazily in the light cone (slow Y drift + slight X wobble). Joystick has a very subtle idle wobble. Screen light casts onto floor - the floor reflection brightness should follow the screen pulse."
+  }
+}

@@ -126,21 +126,39 @@ function initTextReveals() {
     });
   }
 
-  const aboutText = document.querySelector('#about-text .section__text');
-  if (aboutText) {
-    const split = new SplitType(aboutText, { types: 'lines' });
-    gsap.from(split.lines, {
-      y: 40,
-      opacity: 0,
-      stagger: 0.12,
-      duration: 0.7,
-      ease: 'power3.out',
+  const dossier = document.querySelector('.dossier');
+  if (dossier) {
+    const bio = dossier.querySelector('.dossier__bio');
+    const portrait = dossier.querySelector('.dossier__portrait');
+    const info = dossier.querySelector('.dossier__info');
+    const skills = dossier.querySelector('.dossier__skills');
+    const status = dossier.querySelector('.dossier__status');
+
+    const dossierTl = gsap.timeline({
       scrollTrigger: {
-        trigger: aboutText,
-        start: 'top 80%',
+        trigger: dossier,
+        start: 'top 70%',
         toggleActions: 'play none none reverse',
       },
     });
+
+    if (bio) {
+      dossierTl.from(bio, { y: 40, opacity: 0, duration: 0.7, ease: 'power3.out', clearProps: 'transform' });
+    }
+    if (portrait) {
+      dossierTl.from(portrait, { y: 30, opacity: 0, duration: 0.8, ease: 'power3.out', clearProps: 'transform' }, '-=0.5');
+    }
+    if (info) {
+      dossierTl.from(info.querySelectorAll('.dossier__card'), {
+        x: 30, opacity: 0, stagger: 0.1, duration: 0.6, ease: 'power3.out', clearProps: 'transform'
+      }, '-=0.6');
+    }
+    if (skills) {
+      dossierTl.from(skills, { y: 30, opacity: 0, duration: 0.6, ease: 'power3.out', clearProps: 'transform' }, '-=0.3');
+    }
+    if (status) {
+      dossierTl.from(status, { opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+    }
   }
 
   const workHeading = document.querySelector('.work__heading');
